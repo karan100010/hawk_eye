@@ -2,6 +2,7 @@
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 from newspaper import Article
+import requests
 from datetime import datetime   
 def read_google_sheet_to_json(sheet):
    
@@ -243,7 +244,15 @@ theme_dict={
 
 
 }
+#search a term with google search api e
+def search(term):
+    search_url = "https://www.googleapis.com/customsearch/v1?key=AIzaSyAT6MMtfiG24pdVoF8Fh3pYLgkZr7Zm39c&cx=291b60e6939d20fef&q={}".format(term)
+    response = requests.get(search_url)
+    json_response = response.json()
+    links=[[i]['link'] for i in json_response['items']]
+    return links
 
+ #convert a list of links into a rss feed 
 
-    
-    
+ def rss(links):
+    rss_feed = '<?xml version="1.0" encoding="UTF-8"?>\n<rss version="2.0">\n<channel>\n<title>Covid-19</title>\n<link>https://www.google.com/</link>\n<description>Covid-19</description>\n<language>en-us</language>\n<copyright>Copyright (C) 2020</copyright>\n<managingEditor>

@@ -47,11 +47,10 @@ def news_scraper(link):
 
 #search a term with google search api in python
 #restrict the serch to only the past week
-def search(term,cx,days=7):
-    page_index=0
-    all_links=[]
+def search(term,cx,days=7,start_index=0):
+    
     while True:
-        search_url = "https://www.googleapis.com/customsearch/v1?key=AIzaSyAT6MMtfiG24pdVoF8Fh3pYLgkZr7Zm39c&cx={}&q={}&start={}&dateRestrict=d{}".format(cx,term,page_index,days)
+        search_url = "https://www.googleapis.com/customsearch/v1?key=AIzaSyAT6MMtfiG24pdVoF8Fh3pYLgkZr7Zm39c&cx={}&q={}&start={}&dateRestrict=d{}".format(cx,term,start_index,days)
         response = requests.get(search_url)
         return response.json()
 
@@ -98,4 +97,3 @@ def date_time_extract(date_time):
     date=datetime(int(date[0]),int(date[1]),int(date[2]),int(time[0]),int(time[1]),int(time[2]))
     return date 
 
-    

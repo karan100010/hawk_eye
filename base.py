@@ -85,3 +85,17 @@ def to_rss(df):
     for i in df.index:
         rss_stream.append({"link":df.loc[i,"link"],"description":df.loc[i,"description"],"text":df.loc[i,"text"],"title":df.loc[i,"title"],"category":df.loc[i,"category"]})
     return rss_stream
+# extrct date and time form the following format'2022-02-10T23:17:52+05:30' use the bit after + as time zone return the time with adding the time zone
+
+def date_time_extract(date_time):
+    date_time=date_time.split("+")
+    date_time=date_time[0]
+    date_time=date_time.split("T")
+    date=date_time[0]
+    time=date_time[1]
+    date=date.split("-")
+    time=time.split(":")
+    date=datetime(int(date[0]),int(date[1]),int(date[2]),int(time[0]),int(time[1]),int(time[2]))
+    return date 
+
+    

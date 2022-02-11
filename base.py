@@ -47,9 +47,15 @@ def news_scraper(link):
 
 #search a term with google search api in python
 #restrict the serch to only the past week
+def search(term,cx,days=7):
+    page_index=0
+    all_links=[]
+    while True:
+        search_url = "https://www.googleapis.com/customsearch/v1?key=AIzaSyAT6MMtfiG24pdVoF8Fh3pYLgkZr7Zm39c&cx={}&q={}&start={}&dateRestrict=d{}".format(cx,term,page_index,days)
+        response = requests.get(search_url)
+        return response.json()
 
-
-def search(term,cx):
+def get_links(term,cx):
     page_index=0
     all_links=[]
     while True:

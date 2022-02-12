@@ -7,6 +7,9 @@ from datetime import datetime
 import pandas 
 from googletrans import Translator
 import re
+import logging
+# add logging to the file using dd-mm-yyyy:tt also inluding the line number of the info format
+logger=logging.basicConfig(filename='logs/logs.log',level=logging.INFO,format='%(asctime)s:%(lineno)d:%(levelname)s:%(message)s')
 #given a pandas dataframe,column name and a string find that string in the column and return datafreme where the string is found in the column and reset the index of the new dataframe
 
 def find_string(df,column,string):
@@ -88,5 +91,5 @@ def find_similar_sentence(text,sentence):
     return similar_sentence
 #identify names of the people form text
 
-def get_names(text):
+
    

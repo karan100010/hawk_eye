@@ -8,8 +8,8 @@ from datetime import datetime
 import pandas 
 from googletrans import Translator
 import re
+from text_based_func import *
 
-from torch import prelu   
 def read_google_sheet_to_json(sheet):
    
     scope = ['https://spreadsheets.google.com/feeds',
@@ -47,12 +47,10 @@ def news_scraper(link):
 
 #search a term with google search api in python
 #restrict the serch to only the past week
-def search(term,cx,days=7,start_index=0):
-    
-    while True:
-        search_url = "https://www.googleapis.com/customsearch/v1?key=AIzaSyAT6MMtfiG24pdVoF8Fh3pYLgkZr7Zm39c&cx={}&q={}&start={}&dateRestrict=d{}".format(cx,term,start_index,days)
-        response = requests.get(search_url)
-        return response.json()
+def search(term,cx,days=7,start_index=0):        
+    search_url = "https://www.googleapis.com/customsearch/v1?key=AIzaSyAT6MMtfiG24pdVoF8Fh3pYLgkZr7Zm39c&cx={}&q={}&start={}&dateRestrict=d{}".format(cx,term,start_index,days)
+    response = requests.get(search_url)
+    return response.json()
 
 def get_links(term,cx):
     page_index=0
@@ -97,3 +95,60 @@ def date_time_extract(date_time):
     date=datetime(int(date[0]),int(date[1]),int(date[2]),int(time[0]),int(time[1]),int(time[2]))
     return date 
 
+def get_full_data(cx,keyword,days=30,start_index=0,theme_dict=None):
+    data=[]
+    
+    search_result=search(keyword,cx=cx,days=days,start_index=start_index)
+    if search_result["queries"]["request"][0]["totalResults"]>0:
+        data.append({"status":"success","rsults":search_result["queries"]["request"][0]["totalResults"],"start_index":search_result["queries"]["request"][0]["startIndex"],"search_term":keyword})
+        for i in search_result['items']:
+            
+            all_data={}
+            all_data["State"]="Uttar Pradesh"
+            try:
+                all_data["Publication"]=i["pagemap"]["metatags"][0]["og:site_name"]
+            except:
+                all_data["Publication"]="Unknown"
+            try:
+                all_data["language"]=i["pagemap"]["metatags"][0]["og:locale"].split("_")[0]
+            except:
+                all_data["language"]="Unknown"
+
+            try:
+                all_data["link"]=i["link"]
+            except:
+                all_data["link"]="Unknown"
+            if all_data["link"]!="Unknown":
+                news_scraper=news_scraper(all_data["link"])
+                all_data["title"]=news_scraper["title"]
+                all_data["text"]=news_scraper["text"]
+                all_data["date_scraped"]=news_scraper["date_scraped"]
+            else:
+                all_data["title"]="Unknown"
+                all_data["text"]="Unknown"
+                all_data["date_scraped"]="Unknown" 
+                if theme_dict==None:
+                    all_data["category"]="Unknown"
+                else:
+                    for i in theme_dict:
+        # if keyword in i push key of i to category
+                        if keyword in theme_dict[i]:
+                            all_data["category"]=i
+                            break
+                        else:
+                            all_data["category"]="Unknown"
+                all_data["subtheme"]=keyword
+        
+              
+    else:
+        data.append({"status":"fail","rsults":search_result["queries"]["request"][0]["totalResults"],"start_index":search_result["queries"]["request"][0]["startIndex"],"search_term":keyword})
+
+    return data
+
+
+
+
+
+
+
+    

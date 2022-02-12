@@ -86,3 +86,7 @@ def find_similar_sentence(text,sentence):
     for i in sentences:
         similar_sentence[i]=sentence_similarity(i,sentence)
     return similar_sentence
+#identify names of the people form text
+
+def get_names(text):
+   

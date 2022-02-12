@@ -4,7 +4,7 @@ import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 from newspaper import Article
 import requests
-from datetime import datetime
+from datetime import datetime, timedelta
 import pandas 
 from googletrans import Translator
 import re
@@ -62,12 +62,12 @@ def get_links(term,cx):
         try:
             links=[i['link'] for i in json_response['items']]
         except:
-            print("Error in getting links")
+            logger.info("Error in getting links")
             return all_links    
         all_links=all_links+links
-        print(len(all_links))
+        logger.info(len(all_links))
         if len(links)<10:
-            print("done")
+            logger.info("done")
             break
         else:
             page_index+=10
@@ -138,12 +138,35 @@ def get_full_data(cx,keyword,days=30,start_index=0,theme_dict=None):
                         else:
                             all_data["category"]="Unknown"
                 all_data["subtheme"]=keyword
-        
+                if i["pagemap"]["metatags"][0]['article:modified_time']:
+                    all_data["date_published"]=date_time_extract(i["pagemap"]["metatags"][0]['article:modified_time'])
+                elif i["pagemap"]["metatags"][0]['article:published_time']:
+                    all_data["date_published"]=date_time_extract(i["pagemap"]["metatags"][0]['article:published_time'])
+                elif i["pagemap"]["metatags"][0]['article:published_date']:
+                    all_data["date_published"]=date_time_extract(i["pagemap"]["metatags"][0]['article:published_date']) 
+                else:
+                    if "ago" not in i["snippet"][:12]:
+                        all_data["date_published"]=i["snippet"][:12]
+               #subtract the time in  i["snippet"][:8] to date time now
+                    else:
+                       if "week" in i["snippet"][:12]:
+                            all_data["date_published"]=datetime.now()-timedelta(weeks=int(i["snippet"].split(" ")[0]))
+
+                       elif "day" in i["snippet"][:12]:
+                            all_data["date_published"]=datetime.now()-timedelta(days=int(i["snippet"].split(" ")[0]))
+                       elif "hour" in i["snippet"][:12]:
+                           all_data["date_published"]=datetime.now()-timedelta(hours=int(i["snippet"].split(" ")[0]))
+                       elif "minute" in i["snippet"][:12]:
+                           all_data["date_published"]=datetime.now()-timedelta(minutes=int(i["snippet"].split(" ")[0]))
+                       elif "second" in i["snippet"][:12]:
+                           all_data["date_published"]=datetime.now()-timedelta(seconds=int(i["snippet"].split(" ")[0]))             
+
+            data.append(all_data)
               
     else:
         data.append({"status":"fail","rsults":search_result["queries"]["request"][0]["totalResults"],"start_index":search_result["queries"]["request"][0]["startIndex"],"search_term":keyword})
 
-    return data
+    return all_data
 
 
 

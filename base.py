@@ -118,90 +118,104 @@ def date_time_extract(date_time):
 def get_full_data(cx,keyword,days=30,start_index=0,theme_dict=None):
     data=[]
     logging.info("getting links")
-    
-    search_result=search(keyword,cx=cx,days=days,start_index=start_index)
-    if int(search_result["searchInformation"]["totalResults"])>0:
-        data.append({"status":"success","rsults":search_result["searchInformation"]["totalResults"],"start_index":search_result["queries"]["request"][0]["startIndex"],"search_term":keyword})
-        for i in search_result['items']:
-            
-            all_data={}
-            all_data["State"]="Uttar Pradesh"
-            try:
-                all_data["Publication"]=i["pagemap"]["metatags"][0]["og:site_name"]
-            except:
-                all_data["Publication"]="Unknown"
-            try:
-                all_data["language"]=i["pagemap"]["metatags"][0]["og:locale"].split("_")[0]
-            except:
-                all_data["language"]="Unknown"
 
-            try:
-                all_data["link"]=i["link"]
-            except:
-                all_data["link"]="Unknown"
-            if all_data["link"]!="Unknown":
-                news=news_scraper(all_data["link"])
-                all_data["title"]=news["title"]
-                all_data["text"]=news["text"]
-                all_data["date_scraped"]=news["date_scraped"]
+    while True: 
+        search_result=search(keyword,cx=cx,days=days,start_index=start_index)
+        logging.info("got links")
+  #incriment the start index by 10 each time till you get less than 10 links
+        try:
+            if len(search_result['items'])<10:
+                break
             else:
-                all_data["title"]="Unknown"
-                all_data["text"]="Unknown"
-                all_data["date_scraped"]="Unknown" 
-                if theme_dict==None:
-                    all_data["category"]="Unknown"
+                start_index+=10
+        
+        except:
+            break  # if the search result is empty return an empty list      
+
+        if int(search_result["searchInformation"]["totalResults"])>0:
+            data.append({"status":"success","rsults":search_result["searchInformation"]["totalResults"],"start_index":search_result["queries"]["request"][0]["startIndex"],"search_term":keyword})
+            for i in search_result['items']:
+                
+                all_data={}
+                all_data["State"]="Uttar Pradesh"
+                try:
+                    all_data["Publication"]=i["pagemap"]["metatags"][0]["og:site_name"]
+                except:
+                    all_data["Publication"]="Unknown"
+                try:
+                    all_data["language"]=i["pagemap"]["metatags"][0]["og:locale"].split("_")[0]
+                except:
+                    all_data["language"]="Unknown"
+
+                try:
+                    all_data["link"]=i["link"]
+                except:
+                    all_data["link"]="Unknown"
+                if all_data["link"]!="Unknown":
+                    news=news_scraper(all_data["link"])
+                    all_data["title"]=news["title"]
+                    all_data["text"]=news["text"]
+                    all_data["date_scraped"]=news["date_scraped"]
                 else:
-                    for i in theme_dict:
-        # if keyword in i push key of i to category
-                        if keyword in theme_dict[i]:
-                            all_data["category"]=i
+                    all_data["title"]="Unknown"
+                    all_data["text"]="Unknown"
+                    all_data["date_scraped"]="Unknown" 
+                    if theme_dict==None:
+                        all_data["category"]="Unknown"
+                    else:
+                        for i in theme_dict:
+            # if keyword in i push key of i to category
+                            if keyword in theme_dict[i]:
+                                all_data["category"]=i
+                                break
+                            else:
+                                all_data["category"]="Unknown"
+                all_data["subtheme"]=keyword
+                if 'article:modified_time' in i["pagemap"]["metatags"][0]:
+                    all_data["date_published"]=date_time_extract(i["pagemap"]["metatags"][0]['article:modified_time'])
+                elif 'article:published_time' in i["pagemap"]["metatags"][0]:
+                    all_data["date_published"]=date_time_extract(i["pagemap"]["metatags"][0]['article:published_time'])
+                elif 'article:published_date' in i["pagemap"]["metatags"][0]:
+                    all_data["date_published"]=date_time_extract(i["pagemap"]["metatags"][0]['article:published_date']) 
+                else:
+                    if "ago" not in i["snippet"][:12]:
+                        all_data["date_published"]=i["snippet"][:12]
+                #subtract the time in  i["snippet"][:8] to date time now
+                    else:
+                        if "week" in i["snippet"][:12]:
+                            all_data["date_published"]=datetime.now()-timedelta(weeks=int(i["snippet"].split(" ")[0]))
+
+                        elif "day" in i["snippet"][:12]:
+                            all_data["date_published"]=datetime.now()-timedelta(days=int(i["snippet"].split(" ")[0]))
+                        elif "hour" in i["snippet"][:12]:
+                            all_data["date_published"]=datetime.now()-timedelta(hours=int(i["snippet"].split(" ")[0]))
+                        elif "minute" in i["snippet"][:12]:
+                            all_data["date_published"]=datetime.now()-timedelta(minutes=int(i["snippet"].split(" ")[0]))
+                        elif "second" in i["snippet"][:12]:
+                            all_data["date_published"]=datetime.now()-timedelta(seconds=int(i["snippet"].split(" ")[0]))
+                all_data["date_scraped"]=news["date_scraped"]
+                
+                all_data["quotes"]=extect_quotes(all_data["text"])
+                # look for images in i["pagemap"]["cse_image"]  retuen the length of the list add to all_data["images_num"]          
+                all_data["images_num"]=len(i["pagemap"]["cse_image"])
+                image_links=[]
+                for j in i["pagemap"]["cse_image"]:
+                    image_links.append(j["src"])
+                all_data["image_links"]=image_links
+                #if all_data["images_num"]>0 and all image links dont end with photo.jpg add all_data["imgage_found"]=True else add all_data["image_found"]=False
+                if all_data["images_num"]>0:
+                    for j in image_links:
+                        if j[-5:]!="photo.jpg":
+                            all_data["image_found"]=True
                             break
                         else:
-                            all_data["category"]="Unknown"
-            all_data["subtheme"]=keyword
-            if i["pagemap"]["metatags"][0]['article:modified_time']:
-                all_data["date_published"]=date_time_extract(i["pagemap"]["metatags"][0]['article:modified_time'])
-            elif i["pagemap"]["metatags"][0]['article:published_time']:
-                all_data["date_published"]=date_time_extract(i["pagemap"]["metatags"][0]['article:published_time'])
-            elif i["pagemap"]["metatags"][0]['article:published_date']:
-                all_data["date_published"]=date_time_extract(i["pagemap"]["metatags"][0]['article:published_date']) 
-            else:
-                if "ago" not in i["snippet"][:12]:
-                    all_data["date_published"]=i["snippet"][:12]
-            #subtract the time in  i["snippet"][:8] to date time now
-                else:
-                    if "week" in i["snippet"][:12]:
-                        all_data["date_published"]=datetime.now()-timedelta(weeks=int(i["snippet"].split(" ")[0]))
-
-                    elif "day" in i["snippet"][:12]:
-                        all_data["date_published"]=datetime.now()-timedelta(days=int(i["snippet"].split(" ")[0]))
-                    elif "hour" in i["snippet"][:12]:
-                        all_data["date_published"]=datetime.now()-timedelta(hours=int(i["snippet"].split(" ")[0]))
-                    elif "minute" in i["snippet"][:12]:
-                        all_data["date_published"]=datetime.now()-timedelta(minutes=int(i["snippet"].split(" ")[0]))
-                    elif "second" in i["snippet"][:12]:
-                        all_data["date_published"]=datetime.now()-timedelta(seconds=int(i["snippet"].split(" ")[0]))
-            all_data["date_scraped"]=news["date_scraped"]
+                            all_data["image_found"]=False
+                # remove ,?.! from all_data["text"] and get word count add to all_data["word_count"]            
+    
+                data.append(all_data)
             
-            all_data["quotes"]=extect_quotes(all_data["text"])
-            # look for images in i["pagemap"]["cse_image"]  retuen the length of the list add to all_data["images_num"]          
-            all_data["images_num"]=len(i["pagemap"]["cse_image"])
-            image_links=[]
-            for j in i["pagemap"]["cse_image"]:
-                image_links.append(j["src"])
-            all_data["image_links"]=image_links
-            #if all_data["images_num"]>0 and all image links dont end with photo.jpg add all_data["imgage_found"]=True else add all_data["image_found"]=False
-            if all_data["images_num"]>0:
-                for j in image_links:
-                    if j[-5:]!="photo.jpg":
-                        all_data["image_found"]=True
-                        break
-                    else:
-                        all_data["image_found"]=False
-            data.append(all_data)
-            
-    else:
-        data.append({"status":"fail","rsults":search_result["searchInformation"]["totalResults"],"start_index":search_result["queries"]["request"][0]["startIndex"],"search_term":keyword})
+        else:
+            data.append({"status":"fail","rsults":search_result["searchInformation"]["totalResults"],"start_index":search_result["queries"]["request"][0]["startIndex"],"search_term":keyword})
 
     return data
 

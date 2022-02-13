@@ -1,4 +1,5 @@
 #write a fuction that takes google sheets as input and returns a json object
+from msilib import add_data
 import googletrans
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
@@ -159,7 +160,8 @@ def get_full_data(cx,keyword,days=30,start_index=0,theme_dict=None):
                        elif "minute" in i["snippet"][:12]:
                            all_data["date_published"]=datetime.now()-timedelta(minutes=int(i["snippet"].split(" ")[0]))
                        elif "second" in i["snippet"][:12]:
-                           all_data["date_published"]=datetime.now()-timedelta(seconds=int(i["snippet"].split(" ")[0]))             
+                           all_data["date_published"]=datetime.now()-timedelta(seconds=int(i["snippet"].split(" ")[0]))
+                all_data["date_scraped"]=news_scraper["date_scraped"]                      
 
             data.append(all_data)
               

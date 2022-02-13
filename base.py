@@ -139,13 +139,18 @@ def get_full_data(cx,keyword,days=30,start_index=0,theme_dict=None):
                 all_data={}
                 all_data["State"]="Uttar Pradesh"
                 try:
-                    all_data["Publication"]=i["pagemap"]["metatags"][0]["og:site_name"]
+                    if "og:site_name" in i["pagemap"]["metatags"][0]:
+                         all_data["Publication"]=i["pagemap"]["metatags"][0]["og:site_name"]
+                    else:
+                        all_data["Publication"]=i['displayLink'].split(".")[1]     
                 except:
                     all_data["Publication"]="Unknown"
                 try:
+                    if all_data["Publication"] =="jagran":
+                        all_data["language"]="hi"
                     all_data["language"]=i["pagemap"]["metatags"][0]["og:locale"].split("_")[0]
                 except:
-                    all_data["language"]="Unknown"
+                    all_data["language"]="Unknown"    
 
                 try:
                     all_data["link"]=i["link"]

@@ -11,6 +11,18 @@ import pandas
 from googletrans import Translator
 import re
 from text_based_func import *
+import logging
+
+#get logging into a file and also print to the console with line number included
+def get_logger(name):
+    logger = logging.getLogger(name)
+    logger.setLevel(logging.DEBUG)
+    fh = logging.FileHandler('log.txt')
+    fh.setLevel(logging.DEBUG)
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.DEBUG)
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
 
 def read_google_sheet_to_json(sheet):
    
@@ -64,12 +76,12 @@ def get_links(term,cx):
         try:
             links=[i['link'] for i in json_response['items']]
         except:
-            logger.info("Error in getting links")
+            #logger.info("Error in getting links")
             return all_links    
         all_links=all_links+links
-        logger.info(len(all_links))
+        #logger.info(len(all_links))
         if len(links)<10:
-            logger.info("done")
+            #logger.info("done")
             break
         else:
             page_index+=10
@@ -101,8 +113,8 @@ def get_full_data(cx,keyword,days=30,start_index=0,theme_dict=None):
     data=[]
     
     search_result=search(keyword,cx=cx,days=days,start_index=start_index)
-    if search_result["queries"]["request"][0]["totalResults"]>0:
-        data.append({"status":"success","rsults":search_result["queries"]["request"][0]["totalResults"],"start_index":search_result["queries"]["request"][0]["startIndex"],"search_term":keyword})
+    if int(search_result["searchInformation"]["totalResults"])>0:
+        data.append({"status":"success","rsults":search_result["searchInformation"]["totalResults"],"start_index":search_result["queries"]["request"][0]["startIndex"],"search_term":keyword})
         for i in search_result['items']:
             
             all_data={}
@@ -121,10 +133,10 @@ def get_full_data(cx,keyword,days=30,start_index=0,theme_dict=None):
             except:
                 all_data["link"]="Unknown"
             if all_data["link"]!="Unknown":
-                news_scraper=news_scraper(all_data["link"])
-                all_data["title"]=news_scraper["title"]
-                all_data["text"]=news_scraper["text"]
-                all_data["date_scraped"]=news_scraper["date_scraped"]
+                news=news_scraper(all_data["link"])
+                all_data["title"]=news["title"]
+                all_data["text"]=news["text"]
+                all_data["date_scraped"]=news["date_scraped"]
             else:
                 all_data["title"]="Unknown"
                 all_data["text"]="Unknown"
@@ -139,53 +151,52 @@ def get_full_data(cx,keyword,days=30,start_index=0,theme_dict=None):
                             break
                         else:
                             all_data["category"]="Unknown"
-                all_data["subtheme"]=keyword
-                if i["pagemap"]["metatags"][0]['article:modified_time']:
-                    all_data["date_published"]=date_time_extract(i["pagemap"]["metatags"][0]['article:modified_time'])
-                elif i["pagemap"]["metatags"][0]['article:published_time']:
-                    all_data["date_published"]=date_time_extract(i["pagemap"]["metatags"][0]['article:published_time'])
-                elif i["pagemap"]["metatags"][0]['article:published_date']:
-                    all_data["date_published"]=date_time_extract(i["pagemap"]["metatags"][0]['article:published_date']) 
+            all_data["subtheme"]=keyword
+            if i["pagemap"]["metatags"][0]['article:modified_time']:
+                all_data["date_published"]=date_time_extract(i["pagemap"]["metatags"][0]['article:modified_time'])
+            elif i["pagemap"]["metatags"][0]['article:published_time']:
+                all_data["date_published"]=date_time_extract(i["pagemap"]["metatags"][0]['article:published_time'])
+            elif i["pagemap"]["metatags"][0]['article:published_date']:
+                all_data["date_published"]=date_time_extract(i["pagemap"]["metatags"][0]['article:published_date']) 
+            else:
+                if "ago" not in i["snippet"][:12]:
+                    all_data["date_published"]=i["snippet"][:12]
+            #subtract the time in  i["snippet"][:8] to date time now
                 else:
-                    if "ago" not in i["snippet"][:12]:
-                        all_data["date_published"]=i["snippet"][:12]
-               #subtract the time in  i["snippet"][:8] to date time now
-                    else:
-                       if "week" in i["snippet"][:12]:
-                            all_data["date_published"]=datetime.now()-timedelta(weeks=int(i["snippet"].split(" ")[0]))
+                    if "week" in i["snippet"][:12]:
+                        all_data["date_published"]=datetime.now()-timedelta(weeks=int(i["snippet"].split(" ")[0]))
 
-                       elif "day" in i["snippet"][:12]:
-                            all_data["date_published"]=datetime.now()-timedelta(days=int(i["snippet"].split(" ")[0]))
-                       elif "hour" in i["snippet"][:12]:
-                           all_data["date_published"]=datetime.now()-timedelta(hours=int(i["snippet"].split(" ")[0]))
-                       elif "minute" in i["snippet"][:12]:
-                           all_data["date_published"]=datetime.now()-timedelta(minutes=int(i["snippet"].split(" ")[0]))
-                       elif "second" in i["snippet"][:12]:
-                           all_data["date_published"]=datetime.now()-timedelta(seconds=int(i["snippet"].split(" ")[0]))
-                all_data["date_scraped"]=news_scraper["date_scraped"]
-                
-                all_data["quotes"]=extect_quotes(all_data["text"])
-                # look for images in i["pagemap"]["cse_image"]  retuen the length of the list add to all_data["images_num"]          
-                all_data["images_num"]=len(i["pagemap"]["cse_image"])
-                image_links=[]
-                for j in i["pagemap"]["cse_image"]:
-                    image_links.append(j["src"])
-                all_data["image_links"]=image_links
-                #if all_data["images_num"]>0 and all image links dont end with photo.jpg add all_data["imgage_found"]=True else add all_data["image_found"]=False
-                if all_data["images_num"]>0:
-                    for j in image_links:
-                        if j[-5:]!="photo.jpg":
-                            all_data["image_found"]=True
-                            break
-                        else:
-                            all_data["image_found"]=False
+                    elif "day" in i["snippet"][:12]:
+                        all_data["date_published"]=datetime.now()-timedelta(days=int(i["snippet"].split(" ")[0]))
+                    elif "hour" in i["snippet"][:12]:
+                        all_data["date_published"]=datetime.now()-timedelta(hours=int(i["snippet"].split(" ")[0]))
+                    elif "minute" in i["snippet"][:12]:
+                        all_data["date_published"]=datetime.now()-timedelta(minutes=int(i["snippet"].split(" ")[0]))
+                    elif "second" in i["snippet"][:12]:
+                        all_data["date_published"]=datetime.now()-timedelta(seconds=int(i["snippet"].split(" ")[0]))
+            all_data["date_scraped"]=news["date_scraped"]
+            
+            all_data["quotes"]=extect_quotes(all_data["text"])
+            # look for images in i["pagemap"]["cse_image"]  retuen the length of the list add to all_data["images_num"]          
+            all_data["images_num"]=len(i["pagemap"]["cse_image"])
+            image_links=[]
+            for j in i["pagemap"]["cse_image"]:
+                image_links.append(j["src"])
+            all_data["image_links"]=image_links
+            #if all_data["images_num"]>0 and all image links dont end with photo.jpg add all_data["imgage_found"]=True else add all_data["image_found"]=False
+            if all_data["images_num"]>0:
+                for j in image_links:
+                    if j[-5:]!="photo.jpg":
+                        all_data["image_found"]=True
+                        break
+                    else:
+                        all_data["image_found"]=False
             data.append(all_data)
-              
+            
     else:
-        data.append({"status":"fail","rsults":search_result["queries"]["request"][0]["totalResults"],"start_index":search_result["queries"]["request"][0]["startIndex"],"search_term":keyword})
+        data.append({"status":"fail","rsults":search_result["searchInformation"]["totalResults"],"start_index":search_result["queries"]["request"][0]["startIndex"],"search_term":keyword})
 
     return data
-
 
 
 

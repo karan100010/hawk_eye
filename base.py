@@ -161,7 +161,9 @@ def get_full_data(cx,keyword,days=30,start_index=0,theme_dict=None):
                            all_data["date_published"]=datetime.now()-timedelta(minutes=int(i["snippet"].split(" ")[0]))
                        elif "second" in i["snippet"][:12]:
                            all_data["date_published"]=datetime.now()-timedelta(seconds=int(i["snippet"].split(" ")[0]))
-                all_data["date_scraped"]=news_scraper["date_scraped"]                      
+                all_data["date_scraped"]=news_scraper["date_scraped"]
+                
+                all_data["quotes"]=extect_quotes(all_data["text"])                   
 
             data.append(all_data)
               

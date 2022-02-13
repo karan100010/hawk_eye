@@ -1,4 +1,5 @@
 #write a fuction that takes google sheets as input and returns a json object
+from asyncio.log import logger
 from msilib import add_data
 import googletrans
 import gspread
@@ -13,16 +14,20 @@ import re
 from text_based_func import *
 import logging
 
-#get logging into a file and also print to the console with line number included
-def get_logger(name):
-    logger = logging.getLogger(name)
-    logger.setLevel(logging.DEBUG)
-    fh = logging.FileHandler('log.txt')
-    fh.setLevel(logging.DEBUG)
-    ch = logging.StreamHandler()
-    ch.setLevel(logging.DEBUG)
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+#configure logger to print to file and console
 
+logFormatter = logging.Formatter("%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s")
+rootLogger = logging.getLogger()
+
+fileHandler = logging.FileHandler("{0}/{1}.log".format(".", "log"))
+fileHandler.setFormatter(logFormatter)
+rootLogger.addHandler(fileHandler)
+
+consoleHandler = logging.StreamHandler()
+consoleHandler.setFormatter(logFormatter)
+rootLogger.addHandler(consoleHandler)
+rootLogger.info("Started")
+# baselogger = logging.getLogger('base')
 
 def read_google_sheet_to_json(sheet):
    
@@ -99,6 +104,7 @@ def to_rss(df):
 # extrct date and time form the following format'2022-02-10T23:17:52+05:30' use the bit after + as time zone return the time with adding the time zone
 
 def date_time_extract(date_time):
+    
     date_time=date_time.split("+")
     date_time=date_time[0]
     date_time=date_time.split("T")
@@ -111,6 +117,7 @@ def date_time_extract(date_time):
 
 def get_full_data(cx,keyword,days=30,start_index=0,theme_dict=None):
     data=[]
+    logging.info("getting links")
     
     search_result=search(keyword,cx=cx,days=days,start_index=start_index)
     if int(search_result["searchInformation"]["totalResults"])>0:

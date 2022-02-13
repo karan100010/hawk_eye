@@ -2,6 +2,7 @@
 from msilib import add_data
 import googletrans
 import gspread
+from matplotlib import image
 from oauth2client.service_account import ServiceAccountCredentials
 from newspaper import Article
 import requests
@@ -163,14 +164,27 @@ def get_full_data(cx,keyword,days=30,start_index=0,theme_dict=None):
                            all_data["date_published"]=datetime.now()-timedelta(seconds=int(i["snippet"].split(" ")[0]))
                 all_data["date_scraped"]=news_scraper["date_scraped"]
                 
-                all_data["quotes"]=extect_quotes(all_data["text"])                   
-
+                all_data["quotes"]=extect_quotes(all_data["text"])
+                # look for images in i["pagemap"]["cse_image"]  retuen the length of the list add to all_data["images_num"]          
+                all_data["images_num"]=len(i["pagemap"]["cse_image"])
+                image_links=[]
+                for j in i["pagemap"]["cse_image"]:
+                    image_links.append(j["src"])
+                all_data["image_links"]=image_links
+                #if all_data["images_num"]>0 and all image links dont end with photo.jpg add all_data["imgage_found"]=True else add all_data["image_found"]=False
+                if all_data["images_num"]>0:
+                    for j in image_links:
+                        if j[-5:]!="photo.jpg":
+                            all_data["image_found"]=True
+                            break
+                        else:
+                            all_data["image_found"]=False
             data.append(all_data)
               
     else:
         data.append({"status":"fail","rsults":search_result["queries"]["request"][0]["totalResults"],"start_index":search_result["queries"]["request"][0]["startIndex"],"search_term":keyword})
 
-    return all_data
+    return data
 
 
 

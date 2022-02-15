@@ -150,7 +150,18 @@ def get_full_data(cx,keyword,days=30,start_index=0,theme_dict=None):
                         all_data["language"]="hi"
                     all_data["language"]=i["pagemap"]["metatags"][0]["og:locale"].split("_")[0]
                 except:
-                    all_data["language"]="Unknown"    
+                    all_data["language"]="Unknown"  
+                if all_data["Publication"]=="jagran":
+                    all_data["Division"]=all_data["link"].split("/")[-1].split("-")[0]
+                elif all_data["Publication"]=="Navbharat Times":
+                    all_data["Division"]=i["pagamap"]["metatags"][0]["headertitle"]
+                elif all_data["Publication"]=="Hindustan Times":
+                    all_data["Division"]=all_data["link"].split("/")[4].split("-")[0]
+                elif all_data["Publication"]=="Amar Ujala":
+                    all_data["Division"]=all_data["link"].split("/")[4]
+                elif all_data["Publication"]=="The Times of India":
+                    all_data["Division"]=all_data["link"].split("/")[4]    
+
 
                 try:
                     all_data["link"]=i["link"]
@@ -167,6 +178,7 @@ def get_full_data(cx,keyword,days=30,start_index=0,theme_dict=None):
                     all_data["date_scraped"]="Unknown" 
                     if theme_dict==None:
                         all_data["category"]="Unknown"
+                        
                     else:
                         for i in theme_dict:
             # if keyword in i push key of i to category
@@ -215,7 +227,8 @@ def get_full_data(cx,keyword,days=30,start_index=0,theme_dict=None):
                             break
                         else:
                             all_data["image_found"]=False
-                # remove ,?.! from all_data["text"] and get word count add to all_data["word_count"]            
+                # remove ,?.! from all_data["text"] and get word count add to all_data["word_count"]
+                             
     
                 data.append(all_data)
             
@@ -224,7 +237,13 @@ def get_full_data(cx,keyword,days=30,start_index=0,theme_dict=None):
 
     return data
 
-
+#from a list of dictnaries remove the dictanries that has the fisrt key as "status"
+def remove_status(data):
+    new_data=[]
+    for i in data:
+        if "status" not in i:
+            new_data.append(i)
+    return new_data
 
 
 

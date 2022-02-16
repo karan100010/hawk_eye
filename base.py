@@ -13,7 +13,7 @@ from googletrans import Translator
 import re
 from text_based_func import *
 import logging
-
+from time import sleep
 #configure logger to print to file and console
 
 logFormatter = logging.Formatter("%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s")
@@ -43,8 +43,14 @@ def read_google_sheet_to_json(sheet):
  # given a link scrape the news,title,date_published artical using the newspaper3k library and return a json object
 
 def news_scraper(link):
-    article = Article(link)
-    article.download()
+    try:
+        article = Article(link)
+    except:
+        return {}    
+    try:
+        article.download()
+    except:
+        return {}    
     article.parse()
     article.nlp()
     data = {
@@ -67,7 +73,7 @@ def news_scraper(link):
 #search a term with google search api in python
 #restrict the serch to only the past week
 def search(term,cx,days=7,start_index=0):        
-    search_url = "https://www.googleapis.com/customsearch/v1?key=AIzaSyAT6MMtfiG24pdVoF8Fh3pYLgkZr7Zm39c&cx={}&q={}&start={}&dateRestrict=d{}".format(cx,term,start_index,days)
+    search_url = "https://www.googleapis.com/customsearch/v1?key=AIzaSyBvNlMN9AZlV928xW4ggUAGck5r_ys59Co&cx={}&q={}&start={}&dateRestrict=d{}".format(cx,term,start_index,days)
     response = requests.get(search_url)
     return response.json()
 
@@ -122,6 +128,7 @@ def get_full_data(cx,keyword,days=30,start_index=0,theme_dict=None):
     while True: 
         search_result=search(keyword,cx=cx,days=days,start_index=start_index)
         logging.info("got links")
+        
   #incriment the start index by 10 each time till you get less than 10 links
         try:
             if len(search_result['items'])<10:
@@ -140,7 +147,7 @@ def get_full_data(cx,keyword,days=30,start_index=0,theme_dict=None):
                 all_data["State"]="Uttar Pradesh"
                 try:
                     if "og:site_name" in i["pagemap"]["metatags"][0]:
-                         all_data["Publication"]=i["pagemap"]["metatags"][0]["og:site_name"]
+                        all_data["Publication"]=i["pagemap"]["metatags"][0]["og:site_name"]
                     else:
                         all_data["Publication"]=i['displayLink'].split(".")[1]     
                 except:
@@ -150,28 +157,30 @@ def get_full_data(cx,keyword,days=30,start_index=0,theme_dict=None):
                         all_data["language"]="hi"
                     all_data["language"]=i["pagemap"]["metatags"][0]["og:locale"].split("_")[0]
                 except:
-                    all_data["language"]="Unknown"  
-                if all_data["Publication"]=="jagran":
-                    all_data["Division"]=all_data["link"].split("/")[-1].split("-")[0]
-                elif all_data["Publication"]=="Navbharat Times":
-                    all_data["Division"]=i["pagamap"]["metatags"][0]["headertitle"]
-                elif all_data["Publication"]=="Hindustan Times":
-                    all_data["Division"]=all_data["link"].split("/")[4].split("-")[0]
-                elif all_data["Publication"]=="Amar Ujala":
-                    all_data["Division"]=all_data["link"].split("/")[4]
-                elif all_data["Publication"]=="The Times of India":
-                    all_data["Division"]=all_data["link"].split("/")[4]    
+                    all_data["language"]="Unknown" 
+
+               
 
 
                 try:
                     all_data["link"]=i["link"]
                 except:
                     all_data["link"]="Unknown"
+                if all_data["Publication"]=="Navbharat Times":
+                    all_data["location"]=all_data["link"].split("/")[5]
+                else:
+                    all_data["location"]=all_data["link"].split("/")[4].split("-")[0]
+
                 if all_data["link"]!="Unknown":
                     news=news_scraper(all_data["link"])
-                    all_data["title"]=news["title"]
-                    all_data["text"]=news["text"]
-                    all_data["date_scraped"]=news["date_scraped"]
+                    if news:
+                        all_data["title"]=news["title"]
+                        all_data["text"]=news["text"]
+                        all_data["date_scraped"]=news["date_scraped"]
+                    else:
+                        all_data["title"]="Unknown"
+                        all_data["text"]="Unknown"
+                        all_data["date_scraped"]="Unknown"    
                 else:
                     all_data["title"]="Unknown"
                     all_data["text"]="Unknown"
@@ -228,10 +237,10 @@ def get_full_data(cx,keyword,days=30,start_index=0,theme_dict=None):
                         else:
                             all_data["image_found"]=False
                 # remove ,?.! from all_data["text"] and get word count add to all_data["word_count"]
-                             
-    
+                            
+                
                 data.append(all_data)
-            
+                    
         else:
             data.append({"status":"fail","rsults":search_result["searchInformation"]["totalResults"],"start_index":search_result["queries"]["request"][0]["startIndex"],"search_term":keyword})
 
@@ -245,7 +254,17 @@ def remove_status(data):
             new_data.append(i)
     return new_data
 
+#for a colum in a dataframe replace a string with other string
 
-
-
-    
+def replace_string(data,column,old_string,new_string):
+    data[column]=data[column].str.replace(old_string,new_string)
+    return data
+#get location form links in a dataframe by i["link"].split("/")[4].split("-")[0] if Publicaiton is Navbharat Times then get location from i.link.split("/")[5]
+def get_location(data):
+    if data["Publication"]=="Navbharat Times":
+        data["Location"]=data["link"].split("/")[5]
+    else:    
+        data["location"]=data["link"].str.split("/")[4].str.split("-")[0]
+    #data["location"]=data["location"].str.split("/")[5]
+    return data
+   

@@ -8,7 +8,7 @@ import pandas
 from googletrans import Translator
 import re
 import logging
-from stanza.research.nlp.core.doc import Document
+#from stanza.research.nlp.core.doc import Document
 # add logging to the file using dd-mm-yyyy:tt also inluding the line number of the info format
 ###logger=logging.basicConfig(filename='logs/logs.log',level=logging.INFO,format='%(asctime)s:%(lineno)d:%(levelname)s:%(message)s')
 #given a pandas dataframe,column name and a string find that string in the column and return datafreme where the string is found in the column and reset the index of the new dataframe
@@ -93,14 +93,14 @@ def find_similar_sentence(text,sentence):
 #use stanza library to extract part of speech from a text
 #return a dictionary of words and their part of speech
 
-def get_pos(text):
-    
-    doc=Document(text)
-    doc.sentences[0].parse()
-    pos_dict={}
-    for i in doc.sentences[0].words:
-        pos_dict[i.text]=i.pos
-    return pos_dict
+    # def get_pos(text):
+        
+    #     doc=Document(text)
+    #     doc.sentences[0].parse()
+    #     pos_dict={}
+    #     for i in doc.sentences[0].words:
+    #         pos_dict[i.text]=i.pos
+    #     return pos_dict
 
 
    

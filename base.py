@@ -14,6 +14,7 @@ import re
 from text_based_func import *
 import logging
 from time import sleep
+import configparser
 #configure logger to print to file and console
 
 logFormatter = logging.Formatter("%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s")
@@ -42,26 +43,33 @@ def read_google_sheet_to_json(sheet):
 
  # given a link scrape the news,title,date_published artical using the newspaper3k library and return a json object
 
-def news_scraper(link):
-    try:
-        article = Article(link)
-    except:
-        return {}    
-    try:
+def news_scraper(link,retries=3,timeout=10):
+    for i in range(retries):
+        try:
+            article = Article(link) 
+            break
+
+        except:
+            rootLogger.error("Error in scraping article from link {}".format(link))
+            rootLogger.info("Retrying in 5 sconds this is retry number {}".format(i+1))
+            sleep(timeout)
+             
+            
+    if article:
         article.download()
-    except:
-        return {}    
-    article.parse()
-    article.nlp()
-    data = {
-        'title': article.title,
-        'link': link,
-        'date': article.publish_date,
-        'text': article.text,
-        "summary": article.summary,
-    "date_scraped": datetime.now()  }
-    return data
     
+        article.parse()
+        article.nlp()
+        data = {
+            'title': article.title,
+            'link': link,
+            'date': article.publish_date,
+            'text': article.text,
+            "summary": article.summary,
+        "date_scraped": datetime.now()  }
+        return data
+    else:
+        return {}       
     
 
  #create a postgresql table 
@@ -72,16 +80,16 @@ def news_scraper(link):
 
 #search a term with google search api in python
 #restrict the serch to only the past week
-def search(term,cx,days=7,start_index=0):        
-    search_url = "https://www.googleapis.com/customsearch/v1?key=AIzaSyBvNlMN9AZlV928xW4ggUAGck5r_ys59Co&cx={}&q={}&start={}&dateRestrict=d{}".format(cx,term,start_index,days)
+def search(term,cx,api_key,days=7,start_index=0):        
+    search_url = "https://www.googleapis.com/customsearch/v1?key={}&cx={}&q={}&start={}&dateRestrict=d{}".format(api_key,cx,term,start_index,days)
     response = requests.get(search_url)
     return response.json()
 
-def get_links(term,cx):
+def get_links(term,cx,api_key):
     page_index=0
     all_links=[]
     while True:
-        search_url = "https://www.googleapis.com/customsearch/v1?key=AIzaSyAT6MMtfiG24pdVoF8Fh3pYLgkZr7Zm39c&cx={}&q={}&start={}".format(cx,term,page_index)
+        search_url = "https://www.googleapis.com/customsearch/v1?key={}&cx={}&q={}&start={}".format(api_key,cx,term,page_index)
         response = requests.get(search_url)
         json_response = response.json()
         try:
@@ -121,12 +129,23 @@ def date_time_extract(date_time):
     date=datetime(int(date[0]),int(date[1]),int(date[2]),int(time[0]),int(time[1]),int(time[2]))
     return date 
 
-def get_full_data(cx,keyword,days=30,start_index=0,theme_dict=None):
+# read cx,keyword,days=30,start_index,theme_dict form a config file using config parser
+def get_full_data(confing_file,theme_dict):
+
+    config = configparser.ConfigParser()
+    config.read(confing_file)
+    cx=config['Arguments']['cx']
+    keyword=config['Arguments']['keyword']
+    days=config['Arguments']['days']
+    start_index=config['Arguments']['start_index']
+    api_key=config['Arguments']['api_key']
+    #theme_dict=config['Arguments']['theme_dict']
+
     data=[]
     logging.info("getting links")
 
     while True: 
-        search_result=search(keyword,cx=cx,days=days,start_index=start_index)
+        search_result=search(keyword,cx=cx,days=days,start_index=start_index,api_key=api_key)
         logging.info("got links")
         
   #incriment the start index by 10 each time till you get less than 10 links

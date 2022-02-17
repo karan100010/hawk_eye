@@ -130,14 +130,12 @@ def date_time_extract(date_time):
     return date 
 
 # read cx,keyword,days=30,start_index,theme_dict form a config file using config parser
-def get_full_data(confing_file,theme_dict):
+def get_full_data(keyword,confing_file,theme_dict,start_index=0,days=30):
 
     config = configparser.ConfigParser()
     config.read(confing_file)
     cx=config['Arguments']['cx']
-    keyword=config['Arguments']['keyword']
-    days=config['Arguments']['days']
-    start_index=config['Arguments']['start_index']
+   
     api_key=config['Arguments']['api_key']
     #theme_dict=config['Arguments']['theme_dict']
 

@@ -1,6 +1,5 @@
 #write a fuction that takes google sheets as input and returns a json object
 from asyncio.log import logger
-from fnmatch import translate
 from msilib import add_data
 import googletrans
 import gspread
@@ -171,9 +170,7 @@ def get_full_data(keyword,conf_file,theme_dict,start_index=0,days=30):
                         all_data["Publication"]=i['displayLink'].split(".")[1]     
                 except:
                     all_data["Publication"]="Unknown"
-                
                
-
 
                 try:
                     all_data["link"]=i["link"]
@@ -193,16 +190,7 @@ def get_full_data(keyword,conf_file,theme_dict,start_index=0,days=30):
                     else:
                         all_data["title"]="Unknown"
                         all_data["text"]="Unknown"
-                        all_data["date_scraped"]="Unknown" 
-                try:
-                    if all_data["text"]!="Unknown":
-
-                        all_data["language"]=translate.detect(all_data["text"]).lang
-                    else:
-                        all_data["language"]="Unknown"    
-                except:
-                    all_data["language"]="Unknown" 
-           
+                        all_data["date_scraped"]="Unknown"    
                 else:
                     all_data["title"]="Unknown"
                     all_data["text"]="Unknown"
@@ -242,7 +230,12 @@ def get_full_data(keyword,conf_file,theme_dict,start_index=0,days=30):
                         elif "second" in i["snippet"][:12]:
                             all_data["date_published"]=datetime.now()-timedelta(seconds=int(i["snippet"].split(" ")[0]))
                 all_data["date_scraped"]=news["date_scraped"]
-                
+                try:
+                    all_data["language"]=translater.detect(all_data["text"]).lang
+                except:
+                    all_data["language"]="Unknown"
+                    logger.info("language not detected")    
+
                 all_data["quotes"]=extect_quotes(all_data["text"])
                 # look for images in i["pagemap"]["cse_image"]  retuen the length of the list add to all_data["images_num"]          
                 all_data["images_num"]=len(i["pagemap"]["cse_image"])

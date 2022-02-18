@@ -1,5 +1,6 @@
 #write a fuction that takes google sheets as input and returns a json object
 from asyncio.log import logger
+from fnmatch import translate
 from msilib import add_data
 import googletrans
 import gspread
@@ -29,6 +30,7 @@ consoleHandler.setFormatter(logFormatter)
 rootLogger.addHandler(consoleHandler)
 rootLogger.info("Started")
 # baselogger = logging.getLogger('base')
+translater=Translator()
 
 def read_google_sheet_to_json(sheet):
    
@@ -130,10 +132,10 @@ def date_time_extract(date_time):
     return date 
 
 # read cx,keyword,days=30,start_index,theme_dict form a config file using config parser
-def get_full_data(keyword,confing_file,theme_dict,start_index=0,days=30):
+def get_full_data(keyword,conf_file,theme_dict,start_index=0,days=30):
 
     config = configparser.ConfigParser()
-    config.read(confing_file)
+    config.read(conf_file)
     cx=config['Arguments']['cx']
    
     api_key=config['Arguments']['api_key']
@@ -169,13 +171,7 @@ def get_full_data(keyword,confing_file,theme_dict,start_index=0,days=30):
                         all_data["Publication"]=i['displayLink'].split(".")[1]     
                 except:
                     all_data["Publication"]="Unknown"
-                try:
-                    if all_data["Publication"] =="jagran":
-                        all_data["language"]="hi"
-                    all_data["language"]=i["pagemap"]["metatags"][0]["og:locale"].split("_")[0]
-                except:
-                    all_data["language"]="Unknown" 
-
+                
                
 
 
@@ -197,7 +193,16 @@ def get_full_data(keyword,confing_file,theme_dict,start_index=0,days=30):
                     else:
                         all_data["title"]="Unknown"
                         all_data["text"]="Unknown"
-                        all_data["date_scraped"]="Unknown"    
+                        all_data["date_scraped"]="Unknown" 
+                try:
+                    if all_data["text"]!="Unknown":
+
+                        all_data["language"]=translate.detect(all_data["text"]).lang
+                    else:
+                        all_data["language"]="Unknown"    
+                except:
+                    all_data["language"]="Unknown" 
+           
                 else:
                     all_data["title"]="Unknown"
                     all_data["text"]="Unknown"

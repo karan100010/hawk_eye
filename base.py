@@ -15,6 +15,7 @@ from text_based_func import *
 import logging
 from time import sleep
 import configparser
+from geopy.geocoders import Nominatim
 #configure logger to print to file and console
 
 logFormatter = logging.Formatter("%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s")
@@ -136,6 +137,7 @@ def get_full_data(keyword,conf_file,theme_dict,start_index=0,days=30):
     config = configparser.ConfigParser()
     config.read(conf_file)
     cx=config['Arguments']['cx']
+    loc = Nominatim(user_agent="GetLoc")
    
     api_key=config['Arguments']['api_key']
     #theme_dict=config['Arguments']['theme_dict']
@@ -180,6 +182,15 @@ def get_full_data(keyword,conf_file,theme_dict,start_index=0,days=30):
                     all_data["location"]=all_data["link"].split("/")[5]
                 else:
                     all_data["location"]=all_data["link"].split("/")[4].split("-")[0]
+# try to get location coordinates from the location name
+                try:
+                    cordinates=loc.geocode(all_data["location"])
+                except:
+                    all_data["long"]="Unknown"    
+                    all_data["lat"]="Unknown"
+                if cordinates:
+                    all_data["long"]=cordinates.longitude
+                    all_data["lat"]=cordinates.latitude     
 
                 if all_data["link"]!="Unknown":
                     news=news_scraper(all_data["link"])

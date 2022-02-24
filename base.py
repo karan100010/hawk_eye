@@ -249,7 +249,7 @@ def get_full_data(keyword,conf_file,theme_dict,start_index=0,days=30):
                 
                 data.append(all_data)
         try:
-            if len(search_result['items'])<0:
+            if len(search_result['items'])<10:
                 break
             else:
                 start_index+=10

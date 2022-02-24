@@ -12,7 +12,7 @@ import pandas
 from googletrans import Translator
 import re,os
 from text_based_func import *
-import logging
+from datetime import datetime
 from time import sleep
 import configparser
 from geopy.geocoders import Nominatim
@@ -65,7 +65,7 @@ def news_scraper(link,retries=3,timeout=10):
     
 
  #create a postgresql table 
-
+translater=Translator()
 
 #create a fuction that takes a list of json objects ,name of the table and user and inserts them into a postgresql table three parameters link,title,text
 
@@ -137,7 +137,8 @@ def get_full_data(keyword,conf_file,theme_dict,start_index=0,days=30):
 
     while True: 
         search_result=search(keyword,cx=cx,days=days,start_index=start_index,api_key=api_key)
-        rootLogger.info("got links")
+        rootLogger.info("getting links form search result {}".format(search_result))
+       
         
   #incriment the start index by 10 each time till you get less than 10 links
         
@@ -150,23 +151,32 @@ def get_full_data(keyword,conf_file,theme_dict,start_index=0,days=30):
                 try:
                     if "og:site_name" in i["pagemap"]["metatags"][0]:
                         all_data["Publication"]=i["pagemap"]["metatags"][0]["og:site_name"]
+                        rootLogger.info("Publication {}".format(all_data["Publication"]))
                     else:
-                        all_data["Publication"]=i['displayLink'].split(".")[1]     
+                        all_data["Publication"]=i['displayLink'].split(".")[1]  
+                        rootLogger.info("Publication {}".format(all_data["Publication"]))   
                 except:
                     all_data["Publication"]="Unknown"
+                    rootLogger.info("Publication {}".format(all_data["Publication"]))
                
 
                 try:
                     all_data["link"]=i["link"]
+                    rootLogger.info("link {}".format(all_data["link"]))
                 except:
                     all_data["link"]="Unknown"
+                    rootLogger.info("link {}".format(all_data["link"]))
                 if all_data["Publication"]=="Navbharat Times":
                     all_data["location"]=all_data["link"].split("/")[5]
+                    rootLogger.info("location {}".format(all_data["location"]))
                 else:
                     all_data["location"]=all_data["link"].split("/")[4].split("-")[0]
+                    rootLogger.info("location {}".format(all_data["location"]))
 #                try to get location coordinates from the location name
                 try:
                     cordinates=loc.geocode(all_data["location"])
+                    rootLogger.info("cordinates {}".format(cordinates))
+
                 except:
                     all_data["long"]="Unknown"    
                     all_data["lat"]="Unknown"
@@ -178,18 +188,28 @@ def get_full_data(keyword,conf_file,theme_dict,start_index=0,days=30):
                     news=news_scraper(all_data["link"])
                     if news:
                         all_data["title"]=news["title"]
+                        rootLogger.info("title {}".format(all_data["title"]))
                         all_data["text"]=news["text"]
+                        rootLogger.info("text {}".format(all_data["text"]))
                         all_data["date_scraped"]=news["date_scraped"]
+                        rootLogger.info("date_scraped {}".format(all_data["date_scraped"]))
                     else:
                         all_data["title"]="Unknown"
+                        rootLogger.info("title {}".format(all_data["title"]))
                         all_data["text"]="Unknown"
-                        all_data["date_scraped"]="Unknown"    
+                        rootLogger.info("text {}".format(all_data["text"]))
+                        all_data["date_scraped"]="Unknown" 
+                        rootLogger.info("date_scraped {}".format(all_data["date_scraped"]))   
                 else:
                     all_data["title"]="Unknown"
+                    rootLogger.info("title {}".format(all_data["title"]))
                     all_data["text"]="Unknown"
+                    rootLogger.info("text {}".format(all_data["text"]))
                     all_data["date_scraped"]="Unknown" 
+                    rootLogger.info("date_scraped {}".format(all_data["date_scraped"]))
                     if theme_dict==None:
                         all_data["category"]="Unknown"
+                        rootLogger.info("category {}".format(all_data["category"]))
                         
                     else:
                         for i in theme_dict:
@@ -201,39 +221,57 @@ def get_full_data(keyword,conf_file,theme_dict,start_index=0,days=30):
                                 all_data["category"]="Unknown"
                 all_data["subtheme"]=keyword
                 if 'article:modified_time' in i["pagemap"]["metatags"][0]:
+                    rootLogger.info("date_time_extract {}".format(i["pagemap"]["metatags"][0]["article:modified_time"]))
                     all_data["date_published"]=date_time_extract(i["pagemap"]["metatags"][0]['article:modified_time'])
                 elif 'article:published_time' in i["pagemap"]["metatags"][0]:
+                    rootLogger.info("date_time_extract {}".format(i["pagemap"]["metatags"][0]["article:published_time"]))
                     all_data["date_published"]=date_time_extract(i["pagemap"]["metatags"][0]['article:published_time'])
                 elif 'article:published_date' in i["pagemap"]["metatags"][0]:
+                    rootLogger.info("date_time_extract {}".format(i["pagemap"]["metatags"][0]["article:published_date"]))
                     all_data["date_published"]=date_time_extract(i["pagemap"]["metatags"][0]['article:published_date']) 
                 else:
                     if "ago" not in i["snippet"][:12]:
-                        all_data["date_published"]=i["snippet"][:12]
+                        all_data["date_published"]=date_time_extract(i["snippet"][:12])
+                       
                 #subtract the time in  i["snippet"][:8] to date time now
                     else:
                         if "week" in i["snippet"][:12]:
+                            rootLogger.info("date_time_extract {}".format(i["snippet"][:12]))
                             all_data["date_published"]=datetime.now()-timedelta(weeks=int(i["snippet"].split(" ")[0]))
 
                         elif "day" in i["snippet"][:12]:
+                            rootLogger.info("date_time_extract {}".format(i["snippet"][:12]))
                             all_data["date_published"]=datetime.now()-timedelta(days=int(i["snippet"].split(" ")[0]))
                         elif "hour" in i["snippet"][:12]:
+                            rootLogger.info("date_time_extract {}".format(i["snippet"][:12]))
                             all_data["date_published"]=datetime.now()-timedelta(hours=int(i["snippet"].split(" ")[0]))
                         elif "minute" in i["snippet"][:12]:
+                            rootLogger.info("date_time_extract {}".format(i["snippet"][:12]))
                             all_data["date_published"]=datetime.now()-timedelta(minutes=int(i["snippet"].split(" ")[0]))
                         elif "second" in i["snippet"][:12]:
+                            rootLogger.info("date_time_extract {}".format(i["snippet"][:12]))
                             all_data["date_published"]=datetime.now()-timedelta(seconds=int(i["snippet"].split(" ")[0]))
+                        #if all_data["date_published"] is a string convvert it to datetime withdatetime.strptime(all_data["date_published"], "%b %d, %Y")   
+                        
+
                 all_data["date_scraped"]=news["date_scraped"]
+                if isinstance(all_data["date_published"],str):
+                            all_data["date_published"]=datetime.strptime(all_data["date_published"], "%b %d, %Y")
                 try:
                     all_data["language"]=translater.detect(all_data["text"]).lang
+                    rootLogger.info("language {}".format(all_data["language"]))
                 except:
                     all_data["language"]="Unknown"
-                    logger.info("language not detected")    
+                    rootLogger.info("language not detected")    
 
                 all_data["quotes"]=extect_quotes(all_data["text"])
-                # look for images in i["pagemap"]["cse_image"]  retuen the length of the list add to all_data["images_num"]          
+                rootLogger.info("quotes {}".format(all_data["quotes"]))
+                # look for images in i["pagemap"]["cse_image"]  retuen the length of the list add to all_data["images_num"] 
+                rootLogger.info("images_num {}".format(len(i["pagemap"]["cse_image"])))         
                 all_data["images_num"]=len(i["pagemap"]["cse_image"])
                 image_links=[]
                 for j in i["pagemap"]["cse_image"]:
+                    
                     image_links.append(j["src"])
                 all_data["image_links"]=image_links
                 #if all_data["images_num"]>0 and all image links dont end with photo.jpg add all_data["imgage_found"]=True else add all_data["image_found"]=False

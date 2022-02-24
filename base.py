@@ -18,19 +18,9 @@ import configparser
 from geopy.geocoders import Nominatim
 #configure logger to print to file and console
 
-logFormatter = logging.Formatter("%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s")
-rootLogger = logging.getLogger()
 
-fileHandler = logging.FileHandler("{0}/{1}.log".format(".", "log"))
-fileHandler.setFormatter(logFormatter)
-rootLogger.addHandler(fileHandler)
-
-consoleHandler = logging.StreamHandler()
-consoleHandler.setFormatter(logFormatter)
-rootLogger.addHandler(consoleHandler)
-rootLogger.info("Started")
-# baselogger = logging.getLogger('base')
-translater=Translator()
+from logs import *
+rootLogger.info("Starting the program") 
 
 def read_google_sheet_to_json(sheet):
    
@@ -143,22 +133,14 @@ def get_full_data(keyword,conf_file,theme_dict,start_index=0,days=30):
     #theme_dict=config['Arguments']['theme_dict']
 
     data=[]
-    logging.info("getting links")
+    rootLogger.info("getting links")
 
     while True: 
         search_result=search(keyword,cx=cx,days=days,start_index=start_index,api_key=api_key)
-        logging.info("got links")
+        rootLogger.info("got links")
         
   #incriment the start index by 10 each time till you get less than 10 links
-        try:
-            if len(search_result['items'])<10:
-                break
-            else:
-                start_index+=10
         
-        except:
-            break  # if the search result is empty return an empty list      
-
         if int(search_result["searchInformation"]["totalResults"])>0:
             data.append({"status":"success","rsults":search_result["searchInformation"]["totalResults"],"start_index":search_result["queries"]["request"][0]["startIndex"],"search_term":keyword})
             for i in search_result['items']:
@@ -182,7 +164,7 @@ def get_full_data(keyword,conf_file,theme_dict,start_index=0,days=30):
                     all_data["location"]=all_data["link"].split("/")[5]
                 else:
                     all_data["location"]=all_data["link"].split("/")[4].split("-")[0]
-# try to get location coordinates from the location name
+#                try to get location coordinates from the location name
                 try:
                     cordinates=loc.geocode(all_data["location"])
                 except:
@@ -266,6 +248,15 @@ def get_full_data(keyword,conf_file,theme_dict,start_index=0,days=30):
                             
                 
                 data.append(all_data)
+        try:
+            if len(search_result['items'])<0:
+                break
+            else:
+                start_index+=10
+        
+        except:
+            break  # if the search result is empty return an empty list      
+        
                     
         else:
             data.append({"status":"fail","rsults":search_result["searchInformation"]["totalResults"],"start_index":search_result["queries"]["request"][0]["startIndex"],"search_term":keyword})

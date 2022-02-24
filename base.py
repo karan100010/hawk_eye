@@ -10,7 +10,7 @@ import requests
 from datetime import datetime, timedelta
 import pandas 
 from googletrans import Translator
-import re
+import re,os
 from text_based_func import *
 import logging
 from time import sleep
@@ -293,4 +293,19 @@ def get_location(data):
         data["location"]=data["link"].str.split("/")[4].str.split("-")[0]
     #data["location"]=data["location"].str.split("/")[5]
     return data
-   
+
+
+#if a sql databse exitsts with the attributes tracked in get_full_data then append the database with the new data else create a new database and append dataframe
+def create_engine(data,engine):
+    if engine.dialect.has_table(engine, "data"):
+        data.to_sql("data",engine,if_exists="append",index=False)
+    else:
+        data.to_sql("data",engine,if_exists="append",index=False)
+def append_data(data,database):
+    engine=create_engine('sqlite:///'+database)
+    if database in os.listdir():
+        dataframe=pandas.read_sql(database,con=engine)
+        dataframe=dataframe.append(data)
+        dataframe.to_sql(database,con=engine,if_exists="replace")
+    else:
+        data.to_sql(database,con=engine,if_exists="replace")

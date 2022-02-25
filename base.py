@@ -1,7 +1,7 @@
 #write a fuction that takes google sheets as input and returns a json object
 from asyncio.log import logger
 from msilib import add_data
-import googletrans
+
 import gspread
 from matplotlib import image
 from oauth2client.service_account import ServiceAccountCredentials
@@ -9,13 +9,14 @@ from newspaper import Article
 import requests
 from datetime import datetime, timedelta
 import pandas 
-from googletrans import Translator
+
 import re,os
 from text_based_func import *
 from datetime import datetime
 from time import sleep
 import configparser
 from geopy.geocoders import Nominatim
+from langdetect import detect
 #configure logger to print to file and console
 
 
@@ -77,7 +78,7 @@ def news_scraper(link,retries=3,timeout=10):
     
 
  #create a postgresql table 
-translater=Translator()
+
 
 #create a fuction that takes a list of json objects ,name of the table and user and inserts them into a postgresql table three parameters link,title,text
 
@@ -282,7 +283,7 @@ def get_full_data(keyword,conf_file,theme_dict,start_index=0,days=30):
 #convert 2022-02-25 10:51:40.834047 to datetime and set equal to all_data["date_published"]                        
                         all_data["date_published"]=datetime.strptime(all_data["date_published"], "%Y-%m-%d %H:%M:%S.%f")        
                 try:
-                    all_data["language"]=translater.detect(all_data["text"]).lang
+                    all_data["language"]=detect(all_data["text"])
                     rootLogger.info("language {}".format(all_data["language"]))
                 except:
                     all_data["language"]="Unknown"

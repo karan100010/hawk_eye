@@ -202,24 +202,15 @@ def get_full_data(keyword,conf_file,theme_dict,start_index=0,days=30):
                     if news:
                         all_data["title"]=news["title"]
                         rootLogger.info("title {}".format(all_data["title"]))
-                        all_data["text"]=news["text"]
-                        rootLogger.info("text {}".format(all_data["text"]))
-                        all_data["date_scraped"]=news["date_scraped"]
-                        rootLogger.info("date_scraped {}".format(all_data["date_scraped"]))
+                        
                     else:
                         all_data["title"]="Unknown"
                         rootLogger.info("title {}".format(all_data["title"]))
-                        all_data["text"]="Unknown"
-                        rootLogger.info("text {}".format(all_data["text"]))
-                        all_data["date_scraped"]="Unknown" 
-                        rootLogger.info("date_scraped {}".format(all_data["date_scraped"]))   
+                     
                 else:
                     all_data["title"]="Unknown"
                     rootLogger.info("title {}".format(all_data["title"]))
-                    all_data["text"]="Unknown"
-                    rootLogger.info("text {}".format(all_data["text"]))
-                    all_data["date_scraped"]="Unknown" 
-                    rootLogger.info("date_scraped {}".format(all_data["date_scraped"]))
+                    
                     if theme_dict==None:
                         all_data["category"]="Unknown"
                         rootLogger.info("category {}".format(all_data["category"]))
@@ -287,7 +278,7 @@ def get_full_data(keyword,conf_file,theme_dict,start_index=0,days=30):
                     rootLogger.info("language {}".format(all_data["language"]))
                 except:
                     all_data["language"]="Unknown"
-                    rootLogger.info("language not detected")    
+                    rootLogger.info("language not detected")  
 
                 all_data["quotes"]=extect_quotes(all_data["text"])
                 rootLogger.info("quotes {}".format(all_data["quotes"]))

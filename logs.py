@@ -5,7 +5,7 @@ rootLogger = logging.getLogger()
 fileHandler = logging.FileHandler("{0}/{1}.log".format(".", "baselogger.logs"))
 fileHandler.setFormatter(logFormatter)
 rootLogger.addHandler(fileHandler)
-rootLogger.setLevel(logging.DEBUG)
+rootLogger.setLevel(logging.INFO)
         
 consoleHandler = logging.StreamHandler()
 consoleHandler.setFormatter(logFormatter)

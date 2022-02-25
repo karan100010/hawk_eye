@@ -82,9 +82,10 @@ theme_dict={
 "NBCU",
 "Newborn care corner",
 "Newborn Stabilisation unit",
-"NICU",
-"Reduction in morbidity and mortality due to ARI and Diarrhoea",
-"SNCU",
+"newborn intensive care unit",
+"Acute respiratory infection",
+"Diarrhoea",
+"Special Newborn Care Units",
 "Still Birth"
 
 ],

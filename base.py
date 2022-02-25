@@ -55,6 +55,7 @@ def news_scraper(link,retries=3,timeout=10):
                 article.parse()
                 article.nlp()
                 data = {
+                    'html': article.html,
                     'title': article.title,
                     'link': link,
                     'date': article.publish_date,

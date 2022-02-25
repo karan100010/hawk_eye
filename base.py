@@ -48,20 +48,31 @@ def news_scraper(link,retries=3,timeout=10):
              
             
     if article:
-        article.download()
+        for i in range(retries):    
+            try:
+                article.download()
+                        
+                article.parse()
+                article.nlp()
+                data = {
+                    'title': article.title,
+                    'link': link,
+                    'date': article.publish_date,
+                    'text': article.text,
+                    "summary": article.summary,
+                "date_scraped": datetime.now()  }
+                return data
+
+            except:
+                rootLogger.error("Error in downloading article from link {}".format(link))
+                rootLogger.info("Retrying in 5 sconds this is retry number {}".format(i+1))
+                sleep(timeout)
+                continue    
+ # if article is not downloaded then return {}
+    if not article.text:
+        return {}           
     
-        article.parse()
-        article.nlp()
-        data = {
-            'title': article.title,
-            'link': link,
-            'date': article.publish_date,
-            'text': article.text,
-            "summary": article.summary,
-        "date_scraped": datetime.now()  }
-        return data
-    else:
-        return {}       
+          
     
 
  #create a postgresql table 
@@ -220,6 +231,9 @@ def get_full_data(keyword,conf_file,theme_dict,start_index=0,days=30):
                             else:
                                 all_data["category"]="Unknown"
                 all_data["subtheme"]=keyword
+                if "article:modified_date" in i["pagemap"]["metatags"][0]:
+                    all_data["date_published"]=date_time_extract(i["pagemap"]["metatags"][0]["article:modified_date"])
+                    rootLogger.info("date_published {}".format(all_data["date_published"]))
                 if 'article:modified_time' in i["pagemap"]["metatags"][0]:
                     rootLogger.info("date_time_extract {}".format(i["pagemap"]["metatags"][0]["article:modified_time"]))
                     all_data["date_published"]=date_time_extract(i["pagemap"]["metatags"][0]['article:modified_time'])
@@ -231,7 +245,7 @@ def get_full_data(keyword,conf_file,theme_dict,start_index=0,days=30):
                     all_data["date_published"]=date_time_extract(i["pagemap"]["metatags"][0]['article:published_date']) 
                 else:
                     if "ago" not in i["snippet"][:12]:
-                        all_data["date_published"]=date_time_extract(i["snippet"][:12])
+                        all_data["date_published"]=i["snippet"][:12]
                        
                 #subtract the time in  i["snippet"][:8] to date time now
                     else:
@@ -255,8 +269,17 @@ def get_full_data(keyword,conf_file,theme_dict,start_index=0,days=30):
                         
 
                 all_data["date_scraped"]=news["date_scraped"]
+#if all_data["date_published"] endswith a " "remove it
+                             
                 if isinstance(all_data["date_published"],str):
+                    if all_data["date_published"][-1]==" ":
+                        all_data["date_published"]=all_data["date_published"][:-1]  
+
+                    try:
                             all_data["date_published"]=datetime.strptime(all_data["date_published"], "%b %d, %Y")
+                    except:
+#convert 2022-02-25 10:51:40.834047 to datetime and set equal to all_data["date_published"]                        
+                        all_data["date_published"]=datetime.strptime(all_data["date_published"], "%Y-%m-%d %H:%M:%S.%f")        
                 try:
                     all_data["language"]=translater.detect(all_data["text"]).lang
                     rootLogger.info("language {}".format(all_data["language"]))

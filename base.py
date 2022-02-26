@@ -373,3 +373,6 @@ def sql_login(config_file):
 
     
     return engine
+#create a table in a database using pandas and sqlalchemy
+def df_to_sql(data,table_name,engine):
+    data.to_sql(table_name,engine,if_exists="append",index=False)   

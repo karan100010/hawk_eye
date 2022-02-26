@@ -368,3 +368,23 @@ def append_data(data,database):
         dataframe.to_sql(database,con=engine,if_exists="replace")
     else:
         data.to_sql(database,con=engine,if_exists="replace")
+
+
+#given a database,table name and a pandas dataframe create a database if it does not exist and append the dataframe to the table
+# if the table exists then append the dataframe to the table
+# if the table does not exist then create a new table and append the dataframe to the table
+# if the database does not exist then create a new database and append the dataframe to the table
+# if the database and table does not exist then create a new database and table and append the dataframe to the table
+# if the database and table exists then append the dataframe to the table
+# use the schema of the dataframe to create the table
+#the database should be in mysql 
+def create_table(database,table,dataframe):
+    engine=create_engine('mysql://root:@localhost/'+database)
+    if database in os.listdir():
+        if table in os.listdir(database):
+            dataframe.to_sql(table,con=engine,if_exists="append",index=False)
+        else:
+            dataframe.to_sql(table,con=engine,if_exists="replace",index=False)
+    else:
+        dataframe.to_sql(table,con=engine,if_exists="replace",index=False)
+    

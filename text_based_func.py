@@ -8,6 +8,8 @@ import pandas
 from googletrans import Translator
 import re
 import logging
+import os
+import shutil
 #from stanza.research.nlp.core.doc import Document
 # add logging to the file using dd-mm-yyyy:tt also inluding the line number of the info format
 ###logger=logging.basicConfig(filename='logs/logs.log',level=logging.INFO,format='%(asctime)s:%(lineno)d:%(levelname)s:%(message)s')
@@ -102,5 +104,16 @@ def find_similar_sentence(text,sentence):
     #         pos_dict[i.text]=i.pos
     #     return pos_dict
 
+
+# replace all the filenames and directory names 
+#if a substring is found in a filename or directory name replace it with the given string
+# do this iteratively for all files and directories to a given path
+def replace_all(path,substring,replace_string):
+    for filename in os.listdir(path):
+        if substring in filename:
+            new_filename=filename.replace(substring,replace_string)
+            os.rename(os.path.join(path,filename),os.path.join(path,new_filename))
+        if os.path.isdir(os.path.join(path,filename)):
+            replace_all(os.path.join(path,filename),substring,replace_string)
 
    

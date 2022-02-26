@@ -1,5 +1,7 @@
 #write a fuction that takes google sheets as input and returns a json object
+from antigravity import geohash
 from asyncio.log import logger
+from fnmatch import translate
 from msilib import add_data
 
 import gspread
@@ -9,8 +11,10 @@ from newspaper import Article
 import requests
 from datetime import datetime, timedelta
 import pandas 
-
+from bs4 import BeautifulSoup
 import re,os
+from googletrans import Translator
+from telegram import Location
 from text_based_func import *
 from datetime import datetime
 from time import sleep
@@ -133,6 +137,7 @@ def date_time_extract(date_time):
     time=time.split(":")
     date=datetime(int(date[0]),int(date[1]),int(date[2]),int(time[0]),int(time[1]),int(time[2]))
     return date 
+translator=Translator()    
 
 # read cx,keyword,days=30,start_index,theme_dict form a config file using config parser
 def get_full_data(keyword,conf_file,theme_dict,start_index=0,days=30):
@@ -186,17 +191,7 @@ def get_full_data(keyword,conf_file,theme_dict,start_index=0,days=30):
                     all_data["location"]=all_data["link"].split("/")[4].split("-")[0]
                     rootLogger.info("location {}".format(all_data["location"]))
 #                try to get location coordinates from the location name
-                try:
-                    cordinates=loc.geocode(all_data["location"])
-                    rootLogger.info("cordinates {}".format(cordinates))
-
-                except:
-                    all_data["long"]="Unknown"    
-                    all_data["lat"]="Unknown"
-                if cordinates:
-                    all_data["long"]=cordinates.longitude
-                    all_data["lat"]=cordinates.latitude     
-
+                
                 if all_data["link"]!="Unknown":
                     news=news_scraper(all_data["link"])
                     if news:
@@ -260,7 +255,7 @@ def get_full_data(keyword,conf_file,theme_dict,start_index=0,days=30):
                             all_data["date_published"]=datetime.now()-timedelta(seconds=int(i["snippet"].split(" ")[0]))
                         #if all_data["date_published"] is a string convvert it to datetime withdatetime.strptime(all_data["date_published"], "%b %d, %Y")   
                         
-
+    
                 all_data["date_scraped"]=news["date_scraped"]
 #if all_data["date_published"] endswith a " "remove it
                              
@@ -279,6 +274,25 @@ def get_full_data(keyword,conf_file,theme_dict,start_index=0,days=30):
                 except:
                     all_data["language"]="Unknown"
                     rootLogger.info("language not detected")  
+                try:
+                    if all_data["location"]=="story":
+                        soup=BeautifulSoup(news["html"], "html.parser")
+                        place=soup.find("div", property="article:location")
+                        loc_name=place[0].text.split(" ")[-3][1:]
+                        cordinates=loc.geocode(translator.translate(loc_name, dest='en').text)
+                        all_data["location"]="Unknown"
+                        rootLogger.info("location {}".format(all_data["location"]))
+                    else:    
+                        cordinates=loc.geocode(all_data["location"])
+                        rootLogger.info("cordinates {}".format(cordinates))
+
+                except:
+                    all_data["long"]="Unknown"    
+                    all_data["lat"]="Unknown"
+                if cordinates:
+                    all_data["long"]=cordinates.longitude
+                    all_data["lat"]=cordinates.latitude     
+    
 
                 all_data["quotes"]=extect_quotes(all_data["text"])
                 rootLogger.info("quotes {}".format(all_data["quotes"]))

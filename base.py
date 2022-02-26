@@ -3,7 +3,7 @@ from antigravity import geohash
 from asyncio.log import logger
 from fnmatch import translate
 from msilib import add_data
-
+from sqlalchemy import create_engine
 import gspread
 from matplotlib import image
 from oauth2client.service_account import ServiceAccountCredentials
@@ -354,37 +354,22 @@ def get_location(data):
     return data
 
 
-#if a sql databse exitsts with the attributes tracked in get_full_data then append the database with the new data else create a new database and append dataframe
-def create_engine(data,engine):
-    if engine.dialect.has_table(engine, "data"):
-        data.to_sql("data",engine,if_exists="append",index=False)
-    else:
-        data.to_sql("data",engine,if_exists="append",index=False)
-def append_data(data,database):
-    engine=create_engine('sqlite:///'+database)
-    if database in os.listdir():
-        dataframe=pandas.read_sql(database,con=engine)
-        dataframe=dataframe.append(data)
-        dataframe.to_sql(database,con=engine,if_exists="replace")
-    else:
-        data.to_sql(database,con=engine,if_exists="replace")
+#if a sql database exitsts then connect to it else create a new database on muSQL server
 
 
-#given a database,table name and a pandas dataframe create a database if it does not exist and append the dataframe to the table
-# if the table exists then append the dataframe to the table
-# if the table does not exist then create a new table and append the dataframe to the table
-# if the database does not exist then create a new database and append the dataframe to the table
-# if the database and table does not exist then create a new database and table and append the dataframe to the table
-# if the database and table exists then append the dataframe to the table
-# use the schema of the dataframe to create the table
-#the database should be in mysql 
-def create_table(database,table,dataframe):
-    engine=create_engine('mysql://root:@localhost/'+database)
-    if database in os.listdir():
-        if table in os.listdir(database):
-            dataframe.to_sql(table,con=engine,if_exists="append",index=False)
-        else:
-            dataframe.to_sql(table,con=engine,if_exists="replace",index=False)
-    else:
-        dataframe.to_sql(table,con=engine,if_exists="replace",index=False)
+ 
+
+#use sqlalchemy to log into mysql server read confing file using configparser
+
+
+def sql_login(config_file):
+    config=configparser.ConfigParser()
+    config.read(config_file)
+    user=config["sql"]["user"]
+    password=config["sql"]["password"]
+    host=config["sql"]["host"]
+    database=config["sql"]["database"]
+    engine=create_engine("mysql+pymysql://{}:{}@{}/{}".format(user,password,host,database))
+
     
+    return engine

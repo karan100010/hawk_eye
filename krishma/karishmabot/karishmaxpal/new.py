@@ -39,7 +39,6 @@ from PIL import Image
 import xetrapal
 from xetrapal import telegramastras
 import os
-import easyocr
 import feedgenerator
 
 
@@ -77,7 +76,7 @@ def loop(update: Update, context: CallbackContext):
         #     logger.error("{} {}".format(type(e), str(e)))
         #     return    
       #read image and convert into text using text extract
-      
+
         
     
         try:

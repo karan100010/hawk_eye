@@ -120,6 +120,7 @@ def loop(update: Update, context: CallbackContext):
         # except Exception as e:
         #     logger.error("{} {}".format(type(e), str(e)))
         #     return    
+    
         logger.info("Downloading image {}".format(file_info))
         #download image to local file
         download=context.bot.get_file(file_id)
@@ -130,6 +131,8 @@ def loop(update: Update, context: CallbackContext):
         
         try:
             text=pytesseract.image_to_string(Image.open("image.jpg"),lang="hin+eng")
+            #add utf-8 encoding to text
+            text=text.encode('utf-8')
             logger.info("Downloading image {}".format(text))
         except Exception as e:
             logger.error("{} {}".format(type(e), str(e)))

@@ -80,7 +80,7 @@ def loop(update: Update, context: CallbackContext):
         
     
         try:
-            text=pytesseract.image_to_string(Image.open(file_path))
+            text=pytesseract.image_to_string(Image.open(file_path),lang="hin+eng")
             logger.info("Downloading image {}".format(text))
         except Exception as e:
             logger.error("{} {}".format(type(e), str(e)))

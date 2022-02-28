@@ -76,16 +76,20 @@ def loop(update: Update, context: CallbackContext):
         #     logger.error("{} {}".format(type(e), str(e)))
         #     return    
       #read image and convert into text using text extract
+        downloaded_file = context.bot.get_file(file_id)
+        downloaded_file.download('downloaded_file.jpg')
+
 
         
     
         try:
-            text=pytesseract.image_to_string(Image.open(file_path),lang="hin+eng")
+            text=pytesseract.image_to_string(Image.open("downloaded_file.jpg"),lang="hin+eng")
             logger.info("Downloading image {}".format(text))
         except Exception as e:
             logger.error("{} {}".format(type(e), str(e)))
             text=None
-        
+        #delete downloaded file
+        os.remove("downloaded_file.jpg")
         only_text=[]
         for i in text:
             only_text.append(i[-1])

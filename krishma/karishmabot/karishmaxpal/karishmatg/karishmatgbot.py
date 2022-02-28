@@ -132,7 +132,7 @@ def loop(update: Update, context: CallbackContext):
         try:
             text=pytesseract.image_to_string(Image.open("image.jpg"),lang="Devanagari+eng")
             #add utf-8 encoding to text
-            text=text.encode('utf-8')
+          
             logger.info("Downloading image {}".format(text))
         except Exception as e:
             logger.error("{} {}".format(type(e), str(e)))

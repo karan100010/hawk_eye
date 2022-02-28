@@ -138,19 +138,15 @@ def loop(update: Update, context: CallbackContext):
             logger.error("{} {}".format(type(e), str(e)))
             text=None
         
-        only_text=[]
-        for i in text:
-            only_text.append(i[-1])
+        #write text to a file and setnd the file
+
         #remove image from local directory
         os.remove("image.jpg")    
-        text_string=" ".join(only_text)
-        context.bot.sendMessage(chat_id=update.message.chat_id,text=text_string)
-        context_dict={}
+       # text_string=" ".join(only_text)
+        context.bot.sendMessage(chat_id=update.message.chat_id,text=text)
+      
         #context_dict['sender']=update.message.from_user.username
-        context_dict['text']=text_string
-        logger.info(context_dict)
-        dict_to_rssfeed(context_dict)
-    
+  
 
         
     if update.message.text=="/bye":

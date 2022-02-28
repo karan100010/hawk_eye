@@ -156,7 +156,13 @@ def get_full_data(keyword,conf_file,theme_dict,start_index=0,days=30):
     while True: 
         search_result=search(keyword,cx=cx,days=days,start_index=start_index,api_key=api_key)
         rootLogger.info("getting links form search result {}".format(search_result))
-       
+      
+        rootLogger.info("start index {}".format(start_index))
+         #look for key error in search result if error in search reusult return data list with serach result
+        if "error" in search_result:
+            rootLogger.error("Error in search result {}".format(search_result))
+            data.append(search_result   )
+            return data
         
   #incriment the start index by 10 each time till you get less than 10 links
         
@@ -205,6 +211,12 @@ def get_full_data(keyword,conf_file,theme_dict,start_index=0,days=30):
                 else:
                     all_data["title"]="Unknown"
                     rootLogger.info("title {}".format(all_data["title"]))
+                try:
+                    all_data["text"]=news["text"]
+                    rootLogger.info("text {}".format(all_data["text"]))
+                except:
+                    all_data["text"]="Unknown"
+                    rootLogger.info("text {}".format(all_data["text"]))       
                     
                     if theme_dict==None:
                         all_data["category"]="Unknown"
@@ -232,7 +244,7 @@ def get_full_data(keyword,conf_file,theme_dict,start_index=0,days=30):
                     rootLogger.info("date_time_extract {}".format(i["pagemap"]["metatags"][0]["article:published_date"]))
                     all_data["date_published"]=date_time_extract(i["pagemap"]["metatags"][0]['article:published_date']) 
                 else:
-                    if "ago" not in i["snippet"][:12]:
+                    if "ago" not in i["snippet"][:15]:
                         all_data["date_published"]=i["snippet"][:12]
                        
                 #subtract the time in  i["snippet"][:8] to date time now
@@ -289,7 +301,8 @@ def get_full_data(keyword,conf_file,theme_dict,start_index=0,days=30):
                 except:
                     all_data["long"]="Unknown"    
                     all_data["lat"]="Unknown"
-                if cordinates:
+                    cordinates="Unknown"
+                if cordinates != "Unknown":
                     all_data["long"]=cordinates.longitude
                     all_data["lat"]=cordinates.latitude     
     

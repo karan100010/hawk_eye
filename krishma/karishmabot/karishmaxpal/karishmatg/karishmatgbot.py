@@ -129,7 +129,7 @@ def loop(update: Update, context: CallbackContext):
 
         
         try:
-            text=pytesseract.image_to_string(Image.open("downloaded_file.jpg"),lang="hin+eng")
+            text=pytesseract.image_to_string(Image.open("image.jpg"),lang="hin+eng")
             logger.info("Downloading image {}".format(text))
         except Exception as e:
             logger.error("{} {}".format(type(e), str(e)))
@@ -138,7 +138,8 @@ def loop(update: Update, context: CallbackContext):
         only_text=[]
         for i in text:
             only_text.append(i[-1])
-            
+        #remove image from local directory
+        os.remove("image.jpg")    
         text_string=" ".join(only_text)
         context.bot.sendMessage(chat_id=update.message.chat_id,text=text_string)
         context_dict={}

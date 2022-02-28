@@ -4,6 +4,7 @@
 # This program is dedicated to the public domain under the CC0 license.
 # from karishmatgbot.xpal import *
 import logging
+from re import I
 from cv2 import FILE_NODE_UNIFORM
 from numpy.lib.index_tricks import RClass
 from . import xpal
@@ -11,6 +12,8 @@ from . import utils
 import requests, json
 
 import feedgenerator
+import pytesseract
+from PIL import Image
 
 
 # from telegram.ext import (Updater, CommandHandler, MessageHandler, Filters, RegexHandler,
@@ -106,7 +109,8 @@ def loop(update: Update, context: CallbackContext):
             file_info = context.bot.get_file(file_id)
         except Exception as e:
             logger.error("{} {}".format(type(e), str(e)))
-            return
+
+
         
         file_path = file_info.file_path
         logging.info("Downloading image {}".format(file_path))
@@ -117,10 +121,15 @@ def loop(update: Update, context: CallbackContext):
         #     logger.error("{} {}".format(type(e), str(e)))
         #     return    
         logger.info("Downloading image {}".format(file_info))
+        #download image to local file
+        download=context.bot.get_file(file_id)
+        #save the file as image.jpg in current directory
+        download.download('image.jpg')
+
+
         
-    
         try:
-            text=reader.readtext(file_path,paragraph=True)
+            text=pytesseract.image_to_string(Image.open("downloaded_file.jpg"),lang="hin+eng")
             logger.info("Downloading image {}".format(text))
         except Exception as e:
             logger.error("{} {}".format(type(e), str(e)))

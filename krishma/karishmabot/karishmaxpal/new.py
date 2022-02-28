@@ -34,11 +34,10 @@ import requests, json
 from telegram.ext import (CommandHandler, MessageHandler, Filters, RegexHandler,
                           ConversationHandler, CallbackQueryHandler, CallbackContext)
 from telegram import ReplyKeyboardMarkup, ParseMode, InlineKeyboardMarkup, InlineKeyboardButton, Update, ReplyKeyboardRemove
-import pytesseract
-from PIL import Image
 import xetrapal
 from xetrapal import telegramastras
 import os
+import easyocr
 import feedgenerator
 
 
@@ -75,21 +74,16 @@ def loop(update: Update, context: CallbackContext):
         # except Exception as e:
         #     logger.error("{} {}".format(type(e), str(e)))
         #     return    
-      #read image and convert into text using text extract
-        downloaded_file = context.bot.get_file(file_id)
-        downloaded_file.download('downloaded_file.jpg')
-
-
-        
+        logger.info("Downloading image {}".format(file_info))
+        reader=easyocr.Reader(['en','hi'])
     
         try:
-            text=pytesseract.image_to_string(Image.open("downloaded_file.jpg"),lang="hin+eng")
+            text=reader.readtext(file_path,paragraph=True)
             logger.info("Downloading image {}".format(text))
         except Exception as e:
             logger.error("{} {}".format(type(e), str(e)))
             text=None
-        #delete downloaded file
-        os.remove("downloaded_file.jpg")
+        
         only_text=[]
         for i in text:
             only_text.append(i[-1])

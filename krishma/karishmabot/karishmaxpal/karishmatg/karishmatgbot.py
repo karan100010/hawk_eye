@@ -9,7 +9,7 @@ from numpy.lib.index_tricks import RClass
 from . import xpal
 from . import utils
 import requests, json
-import easyocr
+
 import feedgenerator
 
 
@@ -117,7 +117,7 @@ def loop(update: Update, context: CallbackContext):
         #     logger.error("{} {}".format(type(e), str(e)))
         #     return    
         logger.info("Downloading image {}".format(file_info))
-        reader=easyocr.Reader(['en','hi'])
+        
     
         try:
             text=reader.readtext(file_path,paragraph=True)

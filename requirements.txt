@@ -11,7 +11,7 @@ bson == 0.5.10
 
 # C:\Users\karan\hawk_eye\krishma\karishmabot\karishmaxpal\karishmatg\karishmatgbot.py: 12
 # C:\Users\karan\hawk_eye\krishma\karishmabot\karishmaxpal\new.py: 40
-easyocr == 1.4.1
+
 
 # C:\Users\karan\hawk_eye\krishma\karishmabot\karishmaxpal\karishmatg\karishmatgbot.py: 13
 # C:\Users\karan\hawk_eye\krishma\karishmabot\karishmaxpal\new.py: 41

@@ -130,7 +130,7 @@ def loop(update: Update, context: CallbackContext):
 
         
         try:
-            text=pytesseract.image_to_string(Image.open("image.jpg"),lang="hin+eng")
+            text=pytesseract.image_to_string(Image.open("image.jpg"),lang="hin")
             #add utf-8 encoding to text
           
             logger.info("Downloading image {}".format(text))

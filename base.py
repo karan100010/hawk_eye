@@ -289,8 +289,10 @@ def get_full_data(keyword,conf_file,theme_dict,start_index=0,days=30):
                 try:
                     if all_data["location"]=="story":
                         soup=BeautifulSoup(news["html"], "html.parser")
-                        place=soup.find("div", property="article:location")
+                        rootLogger.info("soup {}".format(soup))
+                        place=soup.findAll("div", {"class":"athr-info"})
                         loc_name=place[0].text.split(" ")[-3][1:]
+                        rootLogger.info("loc_name {}".format(loc_name))
                         cordinates=loc.geocode(translator.translate(loc_name, dest='en').text)
                         all_data["location"]=translator.translate(loc_name, dest='en').text
                         rootLogger.info("location {}".format(all_data["location"]))

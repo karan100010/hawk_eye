@@ -348,7 +348,7 @@ def get_full_data(keyword,conf_file,theme_dict,start_index=0,days=30):
 def remove_status(data):
     new_data=[]
     for i in data:
-        if "status" not in i:
+        if "status" not in i or "error" not in i:
             new_data.append(i)
     return new_data
 

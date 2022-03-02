@@ -30,14 +30,10 @@ def language_detect(text):
 def total_words(text):
     return len(text.split())
 
-# extact quotes from a text
+# extact quotes form the middle of a text using regular expression
 
 def extect_quotes(text):
-    quotes=[]
-    for i in text.split():
-        if i.startswith('"') and i.endswith('"'):
-            quotes.append(i)
-    return quotes
+    return re.findall(r'"([^"]*)"',text)
 #clean words that start with non alphabet characters
 def clean_words(text):
     text=text.lower()

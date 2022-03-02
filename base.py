@@ -1,5 +1,5 @@
 #write a fuction that takes google sheets as input and returns a json object
-from antigravity import geohash
+
 from asyncio.log import logger
 from fnmatch import translate
 from msilib import add_data
@@ -292,7 +292,7 @@ def get_full_data(keyword,conf_file,theme_dict,start_index=0,days=30):
                         place=soup.find("div", property="article:location")
                         loc_name=place[0].text.split(" ")[-3][1:]
                         cordinates=loc.geocode(translator.translate(loc_name, dest='en').text)
-                        all_data["location"]="Unknown"
+                        all_data["location"]=translator.translate(loc_name, dest='en').text
                         rootLogger.info("location {}".format(all_data["location"]))
                     else:    
                         cordinates=loc.geocode(all_data["location"])
@@ -302,29 +302,41 @@ def get_full_data(keyword,conf_file,theme_dict,start_index=0,days=30):
                     all_data["long"]="Unknown"    
                     all_data["lat"]="Unknown"
                     cordinates="Unknown"
-                if cordinates != "Unknown":
+                if cordinates==None:
+                    all_data["long"]="Unknown"    
+                    all_data["lat"]="Unknown"
+                    cordinates="Unknown"    
+                if cordinates != "Unknown" :
+
                     all_data["long"]=cordinates.longitude
-                    all_data["lat"]=cordinates.latitude     
-    
+                    all_data["lat"]=cordinates.latitude
+                         
+                else:
+                    all_data["long"]="Unknown"    
+                    all_data["lat"]="Unknown"
 
                 all_data["quotes"]=extect_quotes(all_data["text"])
                 rootLogger.info("quotes {}".format(all_data["quotes"]))
                 # look for images in i["pagemap"]["cse_image"]  retuen the length of the list add to all_data["images_num"] 
-                rootLogger.info("images_num {}".format(len(i["pagemap"]["cse_image"])))         
-                all_data["images_num"]=len(i["pagemap"]["cse_image"])
-                image_links=[]
-                for j in i["pagemap"]["cse_image"]:
-                    
-                    image_links.append(j["src"])
-                all_data["image_links"]=image_links
-                #if all_data["images_num"]>0 and all image links dont end with photo.jpg add all_data["imgage_found"]=True else add all_data["image_found"]=False
-                if all_data["images_num"]>0:
-                    for j in image_links:
-                        if j[-5:]!="photo.jpg":
-                            all_data["image_found"]=True
-                            break
-                        else:
-                            all_data["image_found"]=False
+                if "cse_image" in i["pagemap"]:
+                    rootLogger.info("images_num {}".format(len(i["pagemap"]["cse_image"])))         
+                    all_data["images_num"]=len(i["pagemap"]["cse_image"])
+                    image_links=[]
+                    for j in i["pagemap"]["cse_image"]:
+                        
+                        image_links.append(j["src"])
+                    all_data["image_links"]=image_links
+                    #if all_data["images_num"]>0 and all image links dont end with photo.jpg add all_data["imgage_found"]=True else add all_data["image_found"]=False
+                    if all_data["images_num"]>0:
+                        for j in image_links:
+                            if j[-5:]!="photo.jpg":
+                                all_data["image_found"]=True
+                                break
+                            else:
+                                all_data["image_found"]=False
+                else:
+                    all_data["images_num"]=0
+                    all_data["image_found"]=False                   
                 # remove ,?.! from all_data["text"] and get word count add to all_data["word_count"]
                             
                 
@@ -343,6 +355,7 @@ def get_full_data(keyword,conf_file,theme_dict,start_index=0,days=30):
             data.append({"status":"fail","rsults":search_result["searchInformation"]["totalResults"],"start_index":search_result["queries"]["request"][0]["startIndex"],"search_term":keyword})
 
     return data
+
 
 #from a list of dictnaries remove the dictanries that has the fisrt key as "status"
 def remove_status(data):

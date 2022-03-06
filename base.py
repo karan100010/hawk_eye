@@ -303,15 +303,24 @@ def get_full_data(keyword,conf_file,theme_dict,start_index=0,days=30):
                 except:
                     all_data["long"]="Unknown"    
                     all_data["lat"]="Unknown"
-                    cordinates="Unknown"
+                   # cordinates="Unknown"
                 if cordinates==None:
                     all_data["long"]="Unknown"    
                     all_data["lat"]="Unknown"
-                    cordinates="Unknown"    
+                  #  cordinates="Unknown"    
                 if cordinates != "Unknown" :
+                    if hasattr(cordinates, 'longitude'):
 
-                    all_data["long"]=cordinates.longitude
-                    all_data["lat"]=cordinates.latitude
+
+                        all_data["long"]=cordinates.longitude
+                    else:
+                        rootLogger.info("longitude not found")
+                        all_data["long"]="Unknown"
+                    if hasattr(cordinates, 'latitude'):        
+                        all_data["lat"]=cordinates.latitude
+                    else:
+                        rootLogger.info("latitude not found")
+                        all_data["lat"]="Unknown"    
                          
                 else:
                     all_data["long"]="Unknown"    

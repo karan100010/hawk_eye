@@ -2,8 +2,8 @@
 #reads the first row as the key
 # and puts other rows as values
 # return the list of all the key value pairs
- import gspread
- from oauth2client.service_account import ServiceAccountCredentials
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
 
 def return_sheet_vals(sheet_name):
    

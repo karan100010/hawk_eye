@@ -406,7 +406,7 @@ def sql_login(config_file):
     password=config["sql"]["password"]
     host=config["sql"]["host"]
     database=config["sql"]["database"]
-    engine=create_engine("mysql+pymysql://{}:{}@{}/{}".format(user,password,host,database))
+    engine=create_engine("mysql+pymysql://{}:{}@{}/{}".format(user,password,host,database), connect_args={"check_same_thread": False})
 
     
     return engine

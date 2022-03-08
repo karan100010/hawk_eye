@@ -8,6 +8,7 @@ sys.path.append("..")
 from base import sql_login
 sys.path.append("api")
 
+
 engine = sql_login("../scraper.conf")
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 

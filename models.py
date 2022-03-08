@@ -25,6 +25,7 @@ class NewsItems(Base):
     image_num= Column(Integer)
     image_url= Column(String)
     image_found= Column(Boolean)
+    publication= Column(String)
 
 
 
@@ -32,18 +33,7 @@ class NewsItems(Base):
 
   
 
-    news_items = relationship("newsdata", back_populates="text_analytics")
-
-class TextAnalytics(Base):
-    __tablename__ = "text_analytics"
-    id = Column(Integer, primary_key=True, index=True)
-    title = Column(String)
-    text= Column(String,ForeignKey("news_items.text"))
-    word_count= Column(Integer)
-    part_of_speech= Column(String)
-
-    text_analytics = relationship("newsdata", back_populates="news_items")
-
+    news_items = relationship("newsdata")
 
 
 

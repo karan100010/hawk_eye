@@ -14,7 +14,7 @@ import pandas
 from bs4 import BeautifulSoup
 import re,os
 from googletrans import Translator
-from telegram import Location
+from telegram import location
 from text_based_func import *
 from datetime import datetime
 from time import sleep
@@ -167,21 +167,21 @@ def get_full_data(keyword,conf_file,theme_dict,start_index=0,days=30):
   #incriment the start index by 10 each time till you get less than 10 links
         
         if int(search_result["searchInformation"]["totalResults"])>0:
-            data.append({"status":"success","rsults":search_result["searchInformation"]["totalResults"],"start_index":search_result["queries"]["request"][0]["startIndex"],"search_term":keyword})
+            data.append({"status":"success","results":search_result["searchInformation"]["totalResults"],"start_index":search_result["queries"]["request"][0]["startIndex"],"search_term":keyword})
             for i in search_result['items']:
                 
                 all_data={}
-                all_data["State"]="Uttar Pradesh"
+                all_data["state"]="Uttar Pradesh"
                 try:
                     if "og:site_name" in i["pagemap"]["metatags"][0]:
-                        all_data["Publication"]=i["pagemap"]["metatags"][0]["og:site_name"]
-                        rootLogger.info("Publication {}".format(all_data["Publication"]))
+                        all_data["publication"]=i["pagemap"]["metatags"][0]["og:site_name"]
+                        rootLogger.info("publication {}".format(all_data["publication"]))
                     else:
-                        all_data["Publication"]=i['displayLink'].split(".")[1]  
-                        rootLogger.info("Publication {}".format(all_data["Publication"]))   
+                        all_data["publication"]=i['displayLink'].split(".")[1]  
+                        rootLogger.info("publication {}".format(all_data["publication"]))   
                 except:
-                    all_data["Publication"]="Unknown"
-                    rootLogger.info("Publication {}".format(all_data["Publication"]))
+                    all_data["publication"]="Unknown"
+                    rootLogger.info("publication {}".format(all_data["publication"]))
                
 
                 try:
@@ -190,7 +190,7 @@ def get_full_data(keyword,conf_file,theme_dict,start_index=0,days=30):
                 except:
                     all_data["link"]="Unknown"
                     rootLogger.info("link {}".format(all_data["link"]))
-                if all_data["Publication"]=="Navbharat Times":
+                if all_data["publication"]=="Navbharat Times":
                     all_data["location"]=all_data["link"].split("/")[5]
                     rootLogger.info("location {}".format(all_data["location"]))
                 else:
@@ -383,8 +383,8 @@ def replace_string(data,column,old_string,new_string):
     return data
 #get location form links in a dataframe by i["link"].split("/")[4].split("-")[0] if Publicaiton is Navbharat Times then get location from i.link.split("/")[5]
 def get_location(data):
-    if data["Publication"]=="Navbharat Times":
-        data["Location"]=data["link"].split("/")[5]
+    if data["publication"]=="Navbharat Times":
+        data["location"]=data["link"].split("/")[5]
     else:    
         data["location"]=data["link"].str.split("/")[4].str.split("-")[0]
     #data["location"]=data["location"].str.split("/")[5]

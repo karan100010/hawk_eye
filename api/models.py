@@ -26,11 +26,6 @@ class NewsItems(Base):
     image_url= Column(String)
     image_found= Column(Boolean)
     publication= Column(String)
-
-
-
-
-
   
 
     news_items = relationship("newsdata")

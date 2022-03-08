@@ -230,6 +230,14 @@ def get_full_data(keyword,conf_file,theme_dict,start_index=0,days=30):
                                 break
                             else:
                                 all_data["category"]="Unknown"
+#if subtheme in theme_dict keys set all_data["theme"]
+#else set all_data["theme"] to "Unknown"
+                for i in theme_dict:
+                    if all_data["location"] in theme_dict[i]:
+                        all_data["theme"]=i
+                        break
+                    else:
+                        all_data["theme"]="Unknown"                               
                 all_data["subtheme"]=keyword
                 if "article:modified_date" in i["pagemap"]["metatags"][0]:
                     all_data["date_published"]=date_time_extract(i["pagemap"]["metatags"][0]["article:modified_date"])
@@ -398,8 +406,9 @@ def get_location(data):
 
 #use sqlalchemy to log into mysql server read confing file using configparser
 
-
+#create db if not exist
 def sql_login(config_file):
+    
     config=configparser.ConfigParser()
     config.read(config_file)
     user=config["sql"]["user"]

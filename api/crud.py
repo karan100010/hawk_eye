@@ -3,8 +3,11 @@ from fastapi import HTTPException
 
 import models
 
+# add get_all_NewsItems with skip and limit
+def get_all_NewsItems(db: Session, skip: int = 0, limit: int = 100):
+    return db.query(models.NewsItems).offset(skip).limit(limit).all()
 
-def get_data(db: Session, NewsItems_id: int):
+def get_data(db: Session, NewsItems_id: int,skip: int = 0):
     return db.query(models.NewsItems).filter(models.NewsItems.id == NewsItems_id).first()
 
 
@@ -46,3 +49,10 @@ def get_NewsItems_by_subtheme(db: Session, subtheme: str):
 #get data by theme
 def get_NewsItems_by_theme(db: Session, theme: str):
     return db.query(models.NewsItems).filter(models.NewsItems.theme == theme).all()    
+
+# add get_all_NewsItems_by_theme
+def get_all_NewsItems_by_theme(db: Session, theme: str):
+    return db.query(models.NewsItems).filter(models.NewsItems.theme == theme).all()
+# add get_all_NewsItems with skip and limit
+def get_all_NewsItems(db: Session, skip: int = 0, limit: int = 100):
+    return db.query(models.NewsItems).offset(skip).limit(limit).all()

@@ -14,6 +14,7 @@ class NewsItems(Base):
     text= Column(String(32))
     state= Column(String(32))
     category= Column(String(32))
+    theme= Column(String(32))
     subtheme= Column(String(32))
     data_scraped= Column(DateTime)
     data_published= Column(DateTime)
@@ -27,8 +28,7 @@ class NewsItems(Base):
     image_found= Column(Boolean)
     publication= Column(String(32))
   
-
-    news_items = relationship("newsdata")
+#    news_items = relationship("newsdata")
 
 
 

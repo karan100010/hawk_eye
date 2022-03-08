@@ -22,6 +22,7 @@ class NewsItems(BaseModel):
     image_url: str
     image_found: bool
     publication: str
+    theme: str
 
  # write schemas for NewsItemsUpdate
 class NewsItemsUpdate(BaseModel):
@@ -42,6 +43,7 @@ class NewsItemsUpdate(BaseModel):
     image_url: Optional[str] = None
     image_found: Optional[bool] = None
     publication: Optional[str] = None   
+    theme: Optional[str] = None
 
 #write schemas for NewsItemsCreate
 class NewsItemsCreate(BaseModel):
@@ -62,6 +64,6 @@ class NewsItemsCreate(BaseModel):
     image_url: str
     image_found: bool
     publication: str
+    theme: str
 
  # write schemas for NewsItemsInDB
-            

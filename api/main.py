@@ -30,6 +30,10 @@ def create_NewsItems(NewsItems: schemas.NewsItemsCreate, db: Session = Depends(g
 @app.post("/NewsItems/list", response_model=List[schemas.NewsItems], status_code=201)
 def create_NewsItems_list(NewsItems_list: List[schemas.NewsItemsCreate], db: Session = Depends(get_db)):
     return crud.create_NewsItems_list(db=db, NewsItems_list=NewsItems_list)
+#get all NewsItems in "/NewsItems/all"  
+@app.get("/NewsItems/all", response_model=List[schemas.NewsItems])
+def get_all_NewsItems(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    return crud.get_all_NewsItems(db=db, skip=skip, limit=limit)  
 
 # get a NewsItems by id in "/NewsItems/{id}"
 @app.get("/NewsItems/{id}", response_model=schemas.NewsItems)

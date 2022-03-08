@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
+from fastapi import HTTPException
 
-from . import models
+import models
 
 
 def get_data(db: Session, NewsItems_id: int):
@@ -23,3 +24,25 @@ def create_NewsItems(db: Session, NewsItems: models.NewsItems):
     db.commit()
     db.refresh(NewsItems)
     return NewsItems
+#get news items by id
+def get_NewsItems(db: Session, NewsItems_id: int):
+    return db.query(models.NewsItems).filter(models.NewsItems.id == NewsItems_id).first()
+
+#put news items by link
+def update_NewsItems_by_link(db: Session, link: str, NewsItems: models.NewsItems):
+    NewsItems_link = get_NewsItems_by_link(db=db, link=link)
+    if NewsItems_link is None:
+        raise HTTPException(status_code=404, detail="NewsItems not found")
+    NewsItems.id = NewsItems_link.id
+    db.add(NewsItems)
+    db.commit()
+    db.refresh(NewsItems)
+    return NewsItems
+
+ #get data by subtheme
+def get_NewsItems_by_subtheme(db: Session, subtheme: str):
+    return db.query(models.NewsItems).filter(models.NewsItems.subtheme == subtheme).all()   
+
+#get data by theme
+def get_NewsItems_by_theme(db: Session, theme: str):
+    return db.query(models.NewsItems).filter(models.NewsItems.theme == theme).all()    

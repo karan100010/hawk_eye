@@ -14,7 +14,7 @@ import pandas
 from bs4 import BeautifulSoup
 import re,os
 from googletrans import Translator
-from telegram import location
+
 from text_based_func import *
 from datetime import datetime
 from time import sleep

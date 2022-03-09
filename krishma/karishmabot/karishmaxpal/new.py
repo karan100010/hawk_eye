@@ -119,3 +119,7 @@ def dict_to_rssfeed(json_object):
             rssfeed.write(fp, 'utf-8')
     except Exception as e:
         logger.info("{} {}".format(type(e), str(e)))
+
+
+
+        

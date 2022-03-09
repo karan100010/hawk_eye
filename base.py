@@ -117,12 +117,12 @@ def get_links(term,cx,api_key):
     return all_links
 
 
-#converting a dataframe with columns links, discription ,text ,title to a dataframe with columns links, discription ,text ,title, category
+#converting a dataframe with columns links, discription ,text ,title to a dataframe with columns links, discription ,text ,title, theme
 # into a rss stream
 def to_rss(df):
     rss_stream=[]
     for i in df.index:
-        rss_stream.append({"link":df.loc[i,"link"],"description":df.loc[i,"description"],"text":df.loc[i,"text"],"title":df.loc[i,"title"],"category":df.loc[i,"category"]})
+        rss_stream.append({"link":df.loc[i,"link"],"description":df.loc[i,"description"],"text":df.loc[i,"text"],"title":df.loc[i,"title"],"theme":df.loc[i,"theme"]})
     return rss_stream
 # extrct date and time form the following format'2022-02-10T23:17:52+05:30' use the bit after + as time zone return the time with adding the time zone
 
@@ -219,25 +219,20 @@ def get_full_data(keyword,conf_file,theme_dict,start_index=0,days=30):
                     rootLogger.info("text {}".format(all_data["text"]))       
                     
                     if theme_dict==None:
-                        all_data["category"]="Unknown"
-                        rootLogger.info("category {}".format(all_data["category"]))
+                        all_data["theme"]="Unknown"
+                        rootLogger.info("theme {}".format(all_data["theme"]))
                         
                     else:
                         for i in theme_dict:
-            # if keyword in i push key of i to category
+            # if keyword in i push key of i to theme
                             if keyword in theme_dict[i]:
-                                all_data["category"]=i
+                                all_data["theme"]=i
                                 break
                             else:
-                                all_data["category"]="Unknown"
+                                all_data["theme"]="Unknown"
 #if subtheme in theme_dict keys set all_data["theme"]
 #else set all_data["theme"] to "Unknown"
-                for i in theme_dict:
-                    if all_data["location"] in theme_dict[i]:
-                        all_data["theme"]=i
-                        break
-                    else:
-                        all_data["theme"]="Unknown"                               
+                                
                 all_data["subtheme"]=keyword
                 if "article:modified_date" in i["pagemap"]["metatags"][0]:
                     all_data["date_published"]=date_time_extract(i["pagemap"]["metatags"][0]["article:modified_date"])
@@ -422,3 +417,14 @@ def sql_login(config_file):
 #create a table in a database using pandas and sqlalchemy
 def df_to_sql(data,table_name,engine):
     data.to_sql(table_name,engine,if_exists="append",index=False)   
+# in a list of lists append all elememets in the list of list to a new list if "status" and "error" not in the elemet insdie the list of list
+# 
+def remove_status_from_list(data):
+    new_data=[]
+    for i in data:
+        for j in i:
+            if "status" not in j:
+                if "error" not in j:
+                    new_data.append(j)
+               
+    return new_data  

@@ -31,9 +31,11 @@ def total_words(text):
     return len(text.split())
 
 # extact quotes form the middle of a text using regular expression
+# return a list of quotes
 
 def extect_quotes(text):
-    return re.findall(r'"([^"]*)"',text)
+    exp=re.compile(r'"[^"]*"')
+    return re.findall(exp,text)
 #clean words that start with non alphabet characters
 def clean_words(text):
     text=text.lower()

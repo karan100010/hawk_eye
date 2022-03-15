@@ -2,3 +2,4 @@ __pycache__
 scraper.conf
 test.py
 api/baselogger.logs.log
+baselogger.logs.log

@@ -12,8 +12,6 @@ then :
 
 cd hwak_eye:
 
-and install requrements.txt
-
 pip install -r requirements.txt
 
 

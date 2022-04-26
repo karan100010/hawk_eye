@@ -158,7 +158,7 @@ def get_full_data(keyword,conf_file,theme_dict,start_index=0,days=30):
     rootLogger.info("getting links")
 
     while True: 
-        search_result=search(keyword,cx=cx,days=days,start_index=start_index,api_key=api_key)
+        search_result=search(keyword,cx=cx,days=days,start_index=start_index,api_key=api_key_current)
         rootLogger.info("getting links form search result {}".format(search_result))
       
         rootLogger.info("start index {}".format(start_index))
@@ -172,14 +172,15 @@ def get_full_data(keyword,conf_file,theme_dict,start_index=0,days=30):
                     if "error" in search_result==429:
                         if api_key_current !=api_key[-1]:
                             api_key_current=api_key_current[index+1]
-                            break
+                            
                         else:
-                            rootLogger.error("all api keys exosted")
+                            rootLogger.info("Serach is working well with the new api key {}".format(api_key_current))
+                            break
 
 
                     else:    
                         rootLogger.error("Error in search result {}".format(search_result))
-                        data.append(search_result   )
+                        data.append(search_result)
                         return data
         
   #incriment the start index by 10 each time till you get less than 10 links

@@ -1,6 +1,7 @@
 #write a fuction that takes google sheets as input and returns a json object
 
 from asyncio.log import logger
+from distutils.log import error
 from fnmatch import translate
 from msilib import add_data
 from sqlalchemy import create_engine
@@ -149,6 +150,9 @@ def get_full_data(keyword,conf_file,theme_dict,start_index=0,days=30):
    
     api_key=config['Arguments']['api_key']
     #theme_dict=config['Arguments']['theme_dict']
+    api_key_current=config['Arguments']['api_key'][0]
+    #find the index of api_key_current in api_key
+    index=api_key.index(api_key_current)
 
     data=[]
     rootLogger.info("getting links")
@@ -160,9 +164,23 @@ def get_full_data(keyword,conf_file,theme_dict,start_index=0,days=30):
         rootLogger.info("start index {}".format(start_index))
          #look for key error in search result if error in search reusult return data list with serach result
         if "error" in search_result:
-            rootLogger.error("Error in search result {}".format(search_result))
-            data.append(search_result   )
-            return data
+            if  search_result["error"]["code"] == 429:
+                api_key_current=api_key[index+1]
+                for i in api_key[api_key_current:]:
+                    search_result=search(keyword,cx=cx,days=days,start_index=start_index,api_key=api_key_current)
+                    rootLogger.info("getting links form search result {}".format(search_result))
+                    if "error" in search_result==429:
+                        if api_key_current !=api_key[-1]:
+                            api_key_current=api_key_current[index+1]
+                            break
+                        else:
+                            rootLogger.error("all api keys exosted")
+
+
+                    else:    
+                        rootLogger.error("Error in search result {}".format(search_result))
+                        data.append(search_result   )
+                        return data
         
   #incriment the start index by 10 each time till you get less than 10 links
         
@@ -234,42 +252,62 @@ def get_full_data(keyword,conf_file,theme_dict,start_index=0,days=30):
 #else set all_data["theme"] to "Unknown"
                                 
                 all_data["subtheme"]=keyword
-                if "article:modified_date" in i["pagemap"]["metatags"][0]:
-                    all_data["date_published"]=date_time_extract(i["pagemap"]["metatags"][0]["article:modified_date"])
-                    rootLogger.info("date_published {}".format(all_data["date_published"]))
-                if 'article:modified_time' in i["pagemap"]["metatags"][0]:
-                    rootLogger.info("date_time_extract {}".format(i["pagemap"]["metatags"][0]["article:modified_time"]))
-                    all_data["date_published"]=date_time_extract(i["pagemap"]["metatags"][0]['article:modified_time'])
-                elif 'article:published_time' in i["pagemap"]["metatags"][0]:
-                    rootLogger.info("date_time_extract {}".format(i["pagemap"]["metatags"][0]["article:published_time"]))
-                    all_data["date_published"]=date_time_extract(i["pagemap"]["metatags"][0]['article:published_time'])
-                elif 'article:published_date' in i["pagemap"]["metatags"][0]:
-                    rootLogger.info("date_time_extract {}".format(i["pagemap"]["metatags"][0]["article:published_date"]))
-                    all_data["date_published"]=date_time_extract(i["pagemap"]["metatags"][0]['article:published_date']) 
-                else:
-                    if "ago" not in i["snippet"][:15]:
-                        all_data["date_published"]=i["snippet"][:12]
-                       
-                #subtract the time in  i["snippet"][:8] to date time now
+                if isinstance(i["pagemap"]["metatags"],list):
+                    if "article:modified_date" in i["pagemap"]["metatags"][0]:
+                        all_data["date_published"]=date_time_extract(i["pagemap"]["metatags"][0]["article:modified_date"])
+                        rootLogger.info("date_published {}".format(all_data["date_published"]))
+                    if 'article:modified_time' in i["pagemap"]["metatags"][0]:
+                        rootLogger.info("date_time_extract {}".format(i["pagemap"]["metatags"][0]["article:modified_time"]))
+                        all_data["date_published"]=date_time_extract(i["pagemap"]["metatags"][0]['article:modified_time'])
+                    elif 'article:published_time' in i["pagemap"]["metatags"][0]:
+                        rootLogger.info("date_time_extract {}".format(i["pagemap"]["metatags"][0]["article:published_time"]))
+                        all_data["date_published"]=date_time_extract(i["pagemap"]["metatags"][0]['article:published_time'])
+                    elif 'article:published_date' in i["pagemap"]["metatags"][0]:
+                        rootLogger.info("date_time_extract {}".format(i["pagemap"]["metatags"][0]["article:published_date"]))
+                        all_data["date_published"]=date_time_extract(i["pagemap"]["metatags"][0]['article:published_date']) 
                     else:
-                        if "week" in i["snippet"][:12]:
-                            rootLogger.info("date_time_extract {}".format(i["snippet"][:12]))
-                            all_data["date_published"]=datetime.now()-timedelta(weeks=int(i["snippet"].split(" ")[0]))
-
-                        elif "day" in i["snippet"][:12]:
-                            rootLogger.info("date_time_extract {}".format(i["snippet"][:12]))
-                            all_data["date_published"]=datetime.now()-timedelta(days=int(i["snippet"].split(" ")[0]))
-                        elif "hour" in i["snippet"][:12]:
-                            rootLogger.info("date_time_extract {}".format(i["snippet"][:12]))
-                            all_data["date_published"]=datetime.now()-timedelta(hours=int(i["snippet"].split(" ")[0]))
-                        elif "minute" in i["snippet"][:12]:
-                            rootLogger.info("date_time_extract {}".format(i["snippet"][:12]))
-                            all_data["date_published"]=datetime.now()-timedelta(minutes=int(i["snippet"].split(" ")[0]))
-                        elif "second" in i["snippet"][:12]:
-                            rootLogger.info("date_time_extract {}".format(i["snippet"][:12]))
-                            all_data["date_published"]=datetime.now()-timedelta(seconds=int(i["snippet"].split(" ")[0]))
-                        #if all_data["date_published"] is a string convvert it to datetime withdatetime.strptime(all_data["date_published"], "%b %d, %Y")   
+                        if "ago" not in i["snippet"][:15]:
+                            all_data["date_published"]=i["snippet"][:12]
                         
+                    #subtract the time in  i["snippet"][:8] to date time now
+                        else:
+                                if "week" in i["snippet"][:12]:
+                                    rootLogger.info("date_time_extract {}".format(i["snippet"][:12]))
+                                    all_data["date_published"]=datetime.now()-timedelta(weeks=int(i["snippet"].split(" ")[0]))
+
+                                elif "day" in i["snippet"][:12]:
+                                    rootLogger.info("date_time_extract {}".format(i["snippet"][:12]))
+                                    all_data["date_published"]=datetime.now()-timedelta(days=int(i["snippet"].split(" ")[0]))
+                                elif "hour" in i["snippet"][:12]:
+                                    rootLogger.info("date_time_extract {}".format(i["snippet"][:12]))
+                                    all_data["date_published"]=datetime.now()-timedelta(hours=int(i["snippet"].split(" ")[0]))
+                                elif "minute" in i["snippet"][:12]:
+                                    rootLogger.info("date_time_extract {}".format(i["snippet"][:12]))
+                                    all_data["date_published"]=datetime.now()-timedelta(minutes=int(i["snippet"].split(" ")[0]))
+                                elif "second" in i["snippet"][:12]:
+                                    rootLogger.info("date_time_extract {}".format(i["snippet"][:12]))
+                                    all_data["date_published"]=datetime.now()-timedelta(seconds=int(i["snippet"].split(" ")[0]))
+                                #if all_data["date_published"] is a string convvert it to datetime withdatetime.strptime(all_data["date_published"], "%b %d, %Y")   
+                else:
+                            if "week" in i["snippet"][:12]:
+                                rootLogger.info("date_time_extract {}".format(i["snippet"][:12]))
+                                all_data["date_published"]=datetime.now()-timedelta(weeks=int(i["snippet"].split(" ")[0]))
+
+                            elif "day" in i["snippet"][:12]:
+                                rootLogger.info("date_time_extract {}".format(i["snippet"][:12]))
+                                all_data["date_published"]=datetime.now()-timedelta(days=int(i["snippet"].split(" ")[0]))
+                            elif "hour" in i["snippet"][:12]:
+                                rootLogger.info("date_time_extract {}".format(i["snippet"][:12]))
+                                all_data["date_published"]=datetime.now()-timedelta(hours=int(i["snippet"].split(" ")[0]))
+                            elif "minute" in i["snippet"][:12]:
+                                rootLogger.info("date_time_extract {}".format(i["snippet"][:12]))
+                                all_data["date_published"]=datetime.now()-timedelta(minutes=int(i["snippet"].split(" ")[0]))
+                            elif "second" in i["snippet"][:12]:
+                                rootLogger.info("date_time_extract {}".format(i["snippet"][:12]))
+                                all_data["date_published"]=datetime.now()-timedelta(seconds=int(i["snippet"].split(" ")[0]))
+                            #if all_data["date_published"] is a string convvert it to datetime withdatetime.strptime(all_data["date_published"], "%b %d, %Y")   
+                            
+                
     
                 all_data["date_scraped"]=news["date_scraped"]
 #if all_data["date_published"] endswith a " "remove it
@@ -287,8 +325,10 @@ def get_full_data(keyword,conf_file,theme_dict,start_index=0,days=30):
                     all_data["language"]=detect(all_data["text"])
                     rootLogger.info("language {}".format(all_data["language"]))
                 except:
+
                     all_data["language"]="Unknown"
                     rootLogger.info("language not detected")  
+                cordinates=None    
                 try:
                     if all_data["location"]=="story":
                         soup=BeautifulSoup(news["html"], "html.parser")

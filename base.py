@@ -148,10 +148,11 @@ def get_full_data(keyword,conf_file,theme_dict,start_index=0,days=30):
     cx=config['Arguments']['cx']
     loc = Nominatim(user_agent="GetLoc")
    
-    api_key=config['Arguments']['api_key']
+    api_key=config['Arguments']['api_key'].split(",")
     #theme_dict=config['Arguments']['theme_dict']
-    api_key_current=config['Arguments']['api_key'][0]
+    api_key_current=api_key[0]
     #find the index of api_key_current in api_key
+    rootLogger.info("Api key set to {}".format(api_key_current))
     index=api_key.index(api_key_current)
 
     data=[]
@@ -165,23 +166,26 @@ def get_full_data(keyword,conf_file,theme_dict,start_index=0,days=30):
          #look for key error in search result if error in search reusult return data list with serach result
         if "error" in search_result:
             if  search_result["error"]["code"] == 429:
-                api_key_current=api_key[index+1]
-                for i in api_key[api_key_current:]:
+                rootLogger.info("Error 429")
+                for i in api_key[index:]:
                     search_result=search(keyword,cx=cx,days=days,start_index=start_index,api_key=api_key_current)
                     rootLogger.info("getting links form search result {}".format(search_result))
-                    if "error" in search_result==429:
+                    if "error" in search_result and search_result["error"]["code"] == 429:
                         if api_key_current !=api_key[-1]:
-                            api_key_current=api_key_current[index+1]
-                            
-                        else:
-                            rootLogger.info("Serach is working well with the new api key {}".format(api_key_current))
-                            break
+                            index+=1
+                            api_key_current=api_key[index]
+                            rootLogger.info("changed api key to {} index is {}".format(api_key_current,index))
+                            rootLogger.info(search_result)
+                        else:    
+                            rootLogger.error("Error in search result {}".format(search_result))
+                            data.append(search_result)
+                            return data    
+                    else:
+                        rootLogger.info("Serach is working well with the new api key {}".format(api_key_current))
+                        break
 
 
-                    else:    
-                        rootLogger.error("Error in search result {}".format(search_result))
-                        data.append(search_result)
-                        return data
+                    
         
   #incriment the start index by 10 each time till you get less than 10 links
         
@@ -253,7 +257,7 @@ def get_full_data(keyword,conf_file,theme_dict,start_index=0,days=30):
 #else set all_data["theme"] to "Unknown"
                                 
                 all_data["subtheme"]=keyword
-                if isinstance(i["pagemap"]["metatags"],list):
+                if isinstance(i["pagemap"],list):
                     if "article:modified_date" in i["pagemap"]["metatags"][0]:
                         all_data["date_published"]=date_time_extract(i["pagemap"]["metatags"][0]["article:modified_date"])
                         rootLogger.info("date_published {}".format(all_data["date_published"]))
@@ -416,7 +420,7 @@ def get_full_data(keyword,conf_file,theme_dict,start_index=0,days=30):
 def remove_status(data):
     new_data=[]
     for i in data:
-        if "status" not in i or "error" not in i:
+        if "status" not in i and "error" not in i:
             new_data.append(i)
     return new_data
 

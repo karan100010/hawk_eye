@@ -4,6 +4,7 @@ from asyncio.log import logger
 from distutils.log import error
 from fnmatch import translate
 from msilib import add_data
+from matplotlib.pyplot import text, title
 from sqlalchemy import create_engine
 import gspread
 from matplotlib import image
@@ -15,7 +16,9 @@ import pandas
 from bs4 import BeautifulSoup
 import re,os
 from googletrans import Translator
-
+from collections import Counter
+import stanza
+from urllib3 import Retry
 from text_based_func import *
 from datetime import datetime
 from time import sleep
@@ -77,7 +80,7 @@ def news_scraper(link,retries=3,timeout=10):
                 continue    
  # if article is not downloaded then return {}
     if not article.text:
-        return {}           
+        return {"error":"artical not found"}           
     
           
     
@@ -221,9 +224,13 @@ def get_full_data(keyword,conf_file,theme_dict,start_index=0,days=30):
                     rootLogger.info("location {}".format(all_data["location"]))
 #                try to get location coordinates from the location name
                 
+                
                 if all_data["link"]!="Unknown":
                     news=news_scraper(all_data["link"])
-                    if news:
+                    #if error in news return all_data with error and continue
+                    
+
+                    if "title" in news:
                         all_data["title"]=news["title"]
                         rootLogger.info("title {}".format(all_data["title"]))
                         
@@ -234,13 +241,24 @@ def get_full_data(keyword,conf_file,theme_dict,start_index=0,days=30):
                 else:
                     all_data["title"]="Unknown"
                     rootLogger.info("title {}".format(all_data["title"]))
+                if "error" in news:
+                        all_data["error"]=news["error"]
+                        rootLogger.info("error {}".format(all_data["error"]))
+                        data.append(all_data)
+                        break
+                
                 try:
                     all_data["text"]=news["text"]
                     rootLogger.info("text {}".format(all_data["text"]))
                 except:
                     all_data["text"]="Unknown"
-                    rootLogger.info("text {}".format(all_data["text"]))       
-                    
+                    rootLogger.info("text {}".format(all_data["text"]))
+                
+                try:
+                    all_data["char_count"]=len(news["text"])           
+                except:
+                    all_data["char_count"]="Unknown"
+                    rootLogger.info("char_count {}".format(all_data["char_count"]))    
                     if theme_dict==None:
                         all_data["theme"]="Unknown"
                         rootLogger.info("theme {}".format(all_data["theme"]))
@@ -250,6 +268,7 @@ def get_full_data(keyword,conf_file,theme_dict,start_index=0,days=30):
             # if keyword in i push key of i to theme
                             if keyword in theme_dict[i]:
                                 all_data["theme"]=i
+                                rootLogger.info("theme {}".format(all_data["theme"]))
                                 break
                             else:
                                 all_data["theme"]="Unknown"
@@ -257,6 +276,7 @@ def get_full_data(keyword,conf_file,theme_dict,start_index=0,days=30):
 #else set all_data["theme"] to "Unknown"
                                 
                 all_data["subtheme"]=keyword
+                rootLogger.info("subtheme {}".format(all_data["subtheme"]))
                 if isinstance(i["pagemap"],list):
                     if "article:modified_date" in i["pagemap"]["metatags"][0]:
                         all_data["date_published"]=date_time_extract(i["pagemap"]["metatags"][0]["article:modified_date"])
@@ -473,3 +493,137 @@ def remove_status_from_list(data):
                     new_data.append(j)
                
     return new_data  
+
+def filter_text(df):
+    df=df[df["char_count"]>100]
+    df=df[~df["text"].str.endswith("news")]
+    df=df[~df["text"].str.endswith("news-3")]
+    df=df[~df["text"].str.endswith("/")]
+    # remove rows where df["publication"]=="The Times of India" and df["char_count"]==582
+    df=df[~((df["publication"]=="The Times of India")&(df["char_count"]==582))]
+    return df
+        
+#remove rows that end with "news" or "news-3" in a dataframe["text"]
+#punctuations = ['nn','n', '।','/', '`', '+', '\', '"', '?', '▁(', '$', '@', '[', '_', "'", '!', ',', ':', '^', '|', ']', '=', '%', '&', '.', ')', '(', '#', '*', '', ';', '-', '}','|','"'] write a 
+#function that removes punctuations from a string
+def remove_punctuations(text):
+    punctuations = ['nn','n', '।','/', '`', '+', '\'', '"', '?', '▁(', '$', '@', '[', '_', "'", '!', ',', ':', '^', '|', ']', '=', '%', '&', '.', ')', '(', '#', '*', '', ';', '-', '}','|','"']
+    for i in punctuations:
+        text=text.replace(i,"")
+    return text
+#remove joining words form the list stopwords_hi = ['तुम','मेरी','मुझे','क्योंकि','हम','प्रति','अबकी','आगे','माननीय','शहर','बताएं','कौनसी','क्लिक','किसकी','बड़े','मैं','and','रही','आज','लें','आपके','मिलकर','सब','मेरे','जी','श्री','वैसा','आपका','अंदर', 'अत', 'अपना', 'अपनी', 'अपने', 'अभी', 'आदि', 'आप', 'इत्यादि', 'इन', 'इनका', 'इन्हीं', 'इन्हें', 'इन्हों', 'इस', 'इसका', 'इसकी', 'इसके', 'इसमें', 'इसी', 'इसे', 'उन', 'उनका', 'उनकी', 'उनके', 'उनको', 'उन्हीं', 'उन्हें', 'उन्हों', 'उस', 'उसके', 'उसी', 'उसे', 'एक', 'एवं', 'एस', 'ऐसे', 'और', 'कई', 'कर','करता', 'करते', 'करना', 'करने', 'करें', 'कहते', 'कहा', 'का', 'काफ़ी', 'कि', 'कितना', 'किन्हें', 'किन्हों', 'किया', 'किर', 'किस', 'किसी', 'किसे', 'की', 'कुछ', 'कुल', 'के', 'को', 'कोई', 'कौन', 'कौनसा', 'गया', 'घर', 'जब', 'जहाँ', 'जा', 'जितना', 'जिन', 'जिन्हें', 'जिन्हों', 'जिस', 'जिसे', 'जीधर', 'जैसा', 'जैसे', 'जो', 'तक', 'तब', 'तरह', 'तिन', 'तिन्हें', 'तिन्हों', 'तिस', 'तिसे', 'तो', 'था', 'थी', 'थे', 'दबारा', 'दिया', 'दुसरा', 'दूसरे', 'दो', 'द्वारा', 'न', 'नहीं', 'ना', 'निहायत', 'नीचे', 'ने', 'पर', 'पर', 'पहले', 'पूरा', 'पे', 'फिर', 'बनी', 'बही', 'बहुत', 'बाद', 'बाला', 'बिलकुल', 'भी', 'भीतर', 'मगर', 'मानो', 'मे', 'में', 'यदि', 'यह', 'यहाँ', 'यही', 'या', 'यिह', 'ये', 'रखें', 'रहा', 'रहे', 'ऱ्वासा', 'लिए', 'लिये', 'लेकिन', 'व', 'वर्ग', 'वह', 'वह', 'वहाँ', 'वहीं', 'वाले', 'वुह', 'वे', 'वग़ैरह', 'संग', 'सकता', 'सकते', 'सबसे', 'सभी', 'साथ', 'साबुत', 'साभ', 'सारा', 'से', 'सो', 'ही', 'हुआ', 'हुई', 'हुए', 'है', 'हैं', 'हो', 'होता', 'होती', 'होते', 'होना', 'होने', 'अपनि', 'जेसे', 'होति', 'सभि', 'तिंहों', 'इंहों', 'दवारा', 'इसि', 'किंहें', 'थि', 'उंहों', 'ओर', 'जिंहें', 'वहिं', 'अभि', 'बनि', 'हि', 'उंहिं', 'उंहें', 'हें', 'वगेरह', 'एसे', 'रवासा', 'कोन', 'निचे', 'काफि', 'उसि', 'पुरा', 'भितर', 'हे', 'बहि', 'वहां', 'कोइ', 'यहां', 'जिंहों', 'तिंहें', 'किसि', 'कइ', 'यहि', 'इंहिं', 'जिधर', 'इंहें', 'अदि', 'इतयादि', 'हुइ', 'कोनसा', 'इसकि', 'दुसरे', 'जहां', 'अप', 'किंहों', 'उनकि', 'भि', 'वरग', 'हुअ', 'जेसा', 'नहिं']#remove punctuations from a list of strings
+def remove_join_words_hi(text):
+    stopwords_hi = ['तुम','मेरी','मुझे','क्योंकि','हम','प्रति','अबकी','आगे','माननीय','शहर','बताएं','कौनसी','क्लिक','किसकी','बड़े','मैं','and','रही','आज','लें','आपके','मिलकर','सब','मेरे','जी','श्री','वैसा','आपका','अंदर', 'अत', 'अपना', 'अपनी', 'अपने', 'अभी', 'आदि', 'आप', 'इत्यादि', 'इन', 'इनका', 'इन्हीं', 'इन्हें', 'इन्हों', 'इस', 'इसका', 'इसकी', 'इसके', 'इसमें', 'इसी', 'इसे', 'उन', 'उनका', 'उनकी', 'उनके', 'उनको', 'उन्हीं', 'उन्हें', 'उन्हों', 'उस', 'उसके', 'उसी', 'उसे', 'एक', 'एवं', 'एस', 'ऐसे', 'और', 'कई', 'कर','करता', 'करते', 'करना', 'करने', 'करें', 'कहते', 'कहा', 'का', 'काफ़ी', 'कि', 'कितना', 'किन्हें', 'किन्हों', 'किया', 'किर', 'किस', 'किसी', 'किसे', 'की', 'कुछ', 'कुल', 'के', 'को', 'कोई', 'कौन', 'कौनसा', 'गया', 'घर', 'जब', 'जहाँ', 'जा', 'जितना', 'जिन', 'जिन्हें', 'जिन्हों', 'जिस', 'जिसे', 'जीधर', 'जैसा', 'जैसे', 'जो', 'तक', 'तब', 'तरह', 'तिन', 'तिन्हें', 'तिन्हों', 'तिस', 'तिसे', 'तो', 'था', 'थी', 'थे', 'दबारा', 'दिया', 'दुसरा', 'दूसरे', 'दो', 'द्वारा', 'न', 'नहीं', 'ना', 'निहायत', 'नीचे', 'ने', 'पर', 'पर', 'पहले', 'पूरा', 'पे', 'फिर', 'बनी', 'बही', 'बहुत', 'बाद', 'बाला', 'बिलकुल', 'भी', 'भीतर', 'मगर', 'मानो', 'मे', 'में', 'यदि', 'यह', 'यहाँ', 'यही', 'या', 'यिह', 'ये', 'रखें', 'रहा', 'रहे', 'ऱ्वासा', 'लिए', 'लिये', 'लेकिन', 'व', 'वर्ग', 'वह', 'वह', 'वहाँ', 'वहीं', 'वाले', 'वुह', 'वे', 'वग़ैरह', 'संग', 'सकता', 'सकते', 'सबसे', 'सभी', 'साथ', 'साबुत', 'साभ', 'सारा', 'से', 'सो', 'ही', 'हुआ', 'हुई', 'हुए', 'है', 'हैं', 'हो', 'होता', 'होती', 'होते', 'होना', 'होने', 'अपनि', 'जेसे', 'होति', 'सभि', 'तिंहों', 'इंहों', 'दवारा', 'इसि', 'किंहें', 'थि', 'उंहों', 'ओर', 'जिंहें', 'वहिं', 'अभि', 'बनि', 'हि', 'उंहिं', 'उंहें', 'हें', 'वगेरह', 'एसे', 'रवासा', 'कोन', 'निचे', 'काफि', 'उसि', 'पुरा', 'भितर', 'हे', 'बहि', 'वहां', 'कोइ', 'यहां', 'जिंहों', 'तिंहें', 'किसि', 'कइ', 'यहि', 'इंहिं', 'जिधर', 'इंहें', 'अदि', 'इतयादि', 'हुइ', 'कोनसा', 'इसकि', 'दुसरे', 'जहां', 'अप', 'किंहों', 'उनकि', 'भि', 'वरग', 'हुअ', 'जेसा', 'नहिं']
+    for i in stopwords_hi:
+        text=text.replace(i,"")
+    return text
+
+ #count the number of words seprated by space in a string
+def count_words(text):
+    text=remove_punctuations(text)
+    text=text.split()
+    return len(text)
+#count unique words in a string
+def count_unique_words(text):
+    text=remove_punctuations(text)
+    text=text.split()
+    return len(set(text))
+   
+#take a dataframe read df["text"] and count the number of words in each row and add it to df["word_count"]
+
+def add_word_count(df):
+    df["word_count"]=df["text"].apply(count_words)
+    return df
+#write a fuction that returns a dictionary of unique words and their count in a string
+def count_unique_words_in_text(text):
+    # text=remove_punctuations(text)
+    # text=remove_join_words_hi(text)
+    text=text.split()
+    count=Counter(text.split())
+    
+
+    #add part of speech for each word
+    nlp=stanza.Pipeline(lang="hi")
+    doc=nlp(text)
+    pos=[]
+    for i in doc.sentences[0].to_dict():
+        pos.append(i["UPOS"])
+    pos_dict=dict(zip(text,pos))
+    # add count for each word such that "word":[count,pos]
+    for i in count.keys():
+        count[i]=[count[i],pos_dict[i]]
+    return count
+        
+def get_pos_from_text_hi(text):
+    text=remove_punctuations(text)
+    nlp = stanza.Pipeline(lang='hi', processors='tokenize,pos')
+    doc = nlp(text)
+    text_lis=[]
+    pos=[]
+    for sent in doc.sentences:
+        for word in sent.words:
+            text_lis.append(word.text)
+            pos.append(word.upos)
+    #count unique words in text test_lis 
+    count=Counter(text.split())
+    final_dict={}
+
+    for i,j in count.items():
+        if i in text_lis:
+            final_dict[i]=[j,pos[text_lis.index(i)]]
+    #sort dict in decending order usign count
+    final_dict=sorted(final_dict.items(), key=lambda kv: kv[1][0], reverse=True)        
+    return final_dict
+
+
+
+
+
+
+    
+    
+        
+
+        
+
+#take a dataframe read df["text"] and depending on df[language] if hi use hi if en use en
+#  get top 5 adjectives nouns and verbs and add it to df["top_adjectives"],df["top_nouns"],df["top_verbs"]
+
+
+def add_top_words(df):
+    if df["language"]=="hi":
+        df["top_adjectives"]=df["text"].apply(get_top_words_hi_adjectives)
+        df["top_nouns"]=df["text"].apply(get_top_words_hi_nouns)
+        df["top_verbs"]=df["text"].apply(get_top_words_hi_verbs)
+    else:
+        df["top_adjectives"]=df["text"].apply(get_top_words_en_adjectives)
+        df["top_nouns"]=df["text"].apply(get_top_words_en_nouns)
+        df["top_verbs"]=df["text"].apply(get_top_words_en_verbs)
+    return df
+#using stanza libiary and count_unique_words function to get the top 5 adjectives nouns and verbs with there number of occurences
+#for hi
+# and en
+
+def get_top_words_hi_adjectives(text):
+    text=remove_punctuations(text)
+    #text=text.split()
+    nlp=stanza.Pipeline(lang="hi")
+    doc=nlp(text)
+    word_dict=count_unique_words_in_text(text)
+    top_words=[]
+    for i in doc.sentences[0].to_dict():
+        if i["upos"]=="ADJ":
+            top_words.append(i["lemma"])
+    for i in top_words:
+        if i in word_dict:
+            word_dict[i]=word_dict[i]-1
+    return word_dict
+
+# write a fuction that uploads a csv file to a spacific google drive folder
+def upload_file(file_path,folder_id):
+    drive_service=get_drive_service()
+    file_metadata = {
+        'name': os.path.basename(file_path),
+        'parents': [folder_id]
+    }
+    media = MediaFileUpload(file_path)

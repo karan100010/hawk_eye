@@ -5,6 +5,7 @@ from distutils.log import error
 from fnmatch import translate
 from msilib import add_data
 from matplotlib.pyplot import text, title
+from regex import D
 from sqlalchemy import create_engine
 import gspread
 from matplotlib import image
@@ -258,23 +259,26 @@ def get_full_data(keyword,conf_file,theme_dict,start_index=0,days=30):
                     all_data["char_count"]=len(news["text"])           
                 except:
                     all_data["char_count"]="Unknown"
-                    rootLogger.info("char_count {}".format(all_data["char_count"]))    
-                    if theme_dict==None:
-                        all_data["theme"]="Unknown"
-                        rootLogger.info("theme {}".format(all_data["theme"]))
-                        
-                    else:
-                        for i in theme_dict:
-            # if keyword in i push key of i to theme
-                            if keyword in theme_dict[i]:
-                                all_data["theme"]=i
-                                rootLogger.info("theme {}".format(all_data["theme"]))
-                                break
-                            else:
-                                all_data["theme"]="Unknown"
-#if subtheme in theme_dict keys set all_data["theme"]
+                    rootLogger.info("char_count {}".format(all_data["char_count"]))  
+
+#                 if theme_dict==None:
+#                     all_data["theme"]="Unknown"
+#                     rootLogger.info("theme {}".format(all_data["theme"]))
+
+                
+#                 else:
+#                     for i in theme_dict:
+#         # if keyword in i push key of i to theme
+#                         if keyword in theme_dict[i]:
+#                             all_data["theme"]=i
+#                             rootLogger.info("theme {}".format(all_data["theme"]))
+#                             break
+#                         else:
+#                             all_data["theme"]="Unknown"
+# #if subtheme in theme_dict keys set all_data["theme"]
 #else set all_data["theme"] to "Unknown"
-                                
+                all_data["html"]=news["html"]    
+                rootLogger.info("html {}".format(all_data["html"]))                    
                 all_data["subtheme"]=keyword
                 rootLogger.info("subtheme {}".format(all_data["subtheme"]))
                 if isinstance(i["pagemap"],list):
@@ -496,11 +500,13 @@ def remove_status_from_list(data):
 
 def filter_text(df):
     df=df[df["char_count"]>100]
-    df=df[~df["text"].str.endswith("news")]
-    df=df[~df["text"].str.endswith("news-3")]
-    df=df[~df["text"].str.endswith("/")]
+    df=df[~df["link"].str.endswith("news")]
+    df=df[~df["link"].str.endswith("news-3")]
+    df=df[~df["link"].str.endswith("/")]
     # remove rows where df["publication"]=="The Times of India" and df["char_count"]==582
     df=df[~((df["publication"]=="The Times of India")&(df["char_count"]==582))]
+    #if link.split("/")[-2]==articlelist then remove the row
+    df=df[~df["link"].str.contains("articlelist")]
     return df
         
 #remove rows that end with "news" or "news-3" in a dataframe["text"]
@@ -517,6 +523,7 @@ def remove_join_words_hi(text):
     for i in stopwords_hi:
         text=text.replace(i,"")
     return text
+
 
  #count the number of words seprated by space in a string
 def count_words(text):
@@ -535,28 +542,17 @@ def add_word_count(df):
     df["word_count"]=df["text"].apply(count_words)
     return df
 #write a fuction that returns a dictionary of unique words and their count in a string
-def count_unique_words_in_text(text):
-    # text=remove_punctuations(text)
-    # text=remove_join_words_hi(text)
-    text=text.split()
-    count=Counter(text.split())
-    
 
-    #add part of speech for each word
-    nlp=stanza.Pipeline(lang="hi")
-    doc=nlp(text)
-    pos=[]
-    for i in doc.sentences[0].to_dict():
-        pos.append(i["UPOS"])
-    pos_dict=dict(zip(text,pos))
-    # add count for each word such that "word":[count,pos]
-    for i in count.keys():
-        count[i]=[count[i],pos_dict[i]]
-    return count
+#for i in df["text"]:      #for each row in df (i.e. each text) use the function count_unique_words_in_text to get a dictionary of unique words and their count and pass it to a new calumn in df called "word_count"
+
+
+
+
+    
         
-def get_pos_from_text_hi(text):
+def get_pos_from_text_hi(text,lang):
     text=remove_punctuations(text)
-    nlp = stanza.Pipeline(lang='hi', processors='tokenize,pos')
+    nlp = stanza.Pipeline(lang=lang, processors='tokenize,pos')
     doc = nlp(text)
     text_lis=[]
     pos=[]
@@ -572,15 +568,61 @@ def get_pos_from_text_hi(text):
         if i in text_lis:
             final_dict[i]=[j,pos[text_lis.index(i)]]
     #sort dict in decending order usign count
-    final_dict=sorted(final_dict.items(), key=lambda kv: kv[1][0], reverse=True)        
-    return final_dict
+    final_dict=sorted(final_dict.items(), key=lambda kv: kv[1][0], reverse=True)  
+    #convert final_dict to a dictionary
+    #       
+    return dict(final_dict)
 
 
+# after geting pos form text check for nouns and verbs
+def get_top_words_hi_nouns(text,df=None):
+    if df:
+        nouns_and_count={}
+        for i in df["pos"]:
+            if i[1]=="NOUN":
+                nouns_and_count[i[0]]=i[2]
+        return nouns_and_count
+    else:    
+                
+
+        words=get_pos_from_text_hi(text,"hi")
+        nouns_and_count={}
+        for i in words:
+            if words[i][1]=="NOUN":
+                nouns_and_count[i]=words[i][0]
+        return nouns_and_count
 
 
+def get_top_words_hi_verbs(text=None,df=None):
+    if df is not None:
+        verbs_and_count={}
+        for i in df["pos"]:
+            if i[1]=="VERB":
+                verbs_and_count[i[0]]=i[2]
+                return verbs_and_count
+    else:
+        words=get_pos_from_text_hi(text,"hi")
+        verbs_and_count={}
+        for i in words:
+            if words[i][1]=="VERB":
+                verbs_and_count[i]=words[i][0]
+        return verbs_and_count
 
+def get_top_words_en_noun(text,df=None):
+    if df:
+        file_id=df["file_id"][0]
+        request = drive_service.files().update(fileId=file_id, body=file_metadata, media_body=media)
+    else:
+        request = drive_service.files().create(body=file_metadata, media_body=media)
+    response = request.execute()
+    return response
 
     
+        
+    #split a dataseries and get the last element
+    df.str.split(' ').str.get(-1)
+    #set the dictonary in decendign order sorting the values
+    my_dict=dict(sorted(my_dict.items(), key=lambda kv: kv[1], reverse=True))
     
         
 
@@ -618,12 +660,34 @@ def get_top_words_hi_adjectives(text):
         if i in word_dict:
             word_dict[i]=word_dict[i]-1
     return word_dict
+#check for dublicate links in df["link"]
+#if there is a duplicate merge the columms df["subthemes"] with a coma seprating the values
+#for every oher column in df keep the first value
+#return the df
+def check_duplicate_links(df):
+    df=df.groupby("link").agg({'state':"first", 'publication':"first", 'link':"first", 'location':"first", 'title':"first", 'text':"first",
+       'char_count':"first", 'date_published':"first", 'date_scraped':"first", 'language':"first",
+       'long':"first", 'lat':"first", 'quotes':"first", 'images_num':"first", 'image_links':"first", 'image_found':"first","subtheme":lambda x:','.join(x.values)})
+    #add other cloums to df with the first value
+    return df
+    
 
-# write a fuction that uploads a csv file to a spacific google drive folder
-def upload_file(file_path,folder_id):
-    drive_service=get_drive_service()
-    file_metadata = {
-        'name': os.path.basename(file_path),
-        'parents': [folder_id]
-    }
-    media = MediaFileUpload(file_path)
+   
+
+
+
+
+    #use listdir to get all the files form a directory 
+    #then check weather the file is a csv file or not
+    #if csv read the file with pandas.read_csv
+    #if not skip it
+    #concatnate all the files read to a single dataframe
+def read_files(path):
+    files=os.listdir(path)
+    df=pandas.DataFrame()
+    for i in files:
+        if i.endswith(".csv"):
+            df=pandas.concat([df,pandas.read_csv(path+i)])
+    return df
+
+    

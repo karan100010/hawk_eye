@@ -688,9 +688,13 @@ def check_duplicate_links(df):
     return df
     
 
-   
+def check_duplicate_text(df):
+    df=df.groupby("text").agg({'state':"first", 'publication':"first", 'link':"first", 'location':"first", 'title':"first", 'text':"first",
+         'char_count':"first", 'date_published':"first", 'date_scraped':"first", 'language':"first",  
+            'long':"first", 'lat':"first", 'quotes':"first", 'images_num':"first", 'image_links':"first", 'image_found':"first","subtheme":"first"})
 
 
+    return df
 
 
     #use listdir to get all the files form a directory 

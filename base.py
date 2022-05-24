@@ -26,6 +26,8 @@ from time import sleep
 import configparser
 from geopy.geocoders import Nominatim
 from langdetect import detect
+from indic_transliteration import sanscript
+from indic_transliteration.sanscript import transliterate
 #configure logger to print to file and console
 
 
@@ -77,11 +79,16 @@ def news_scraper(link,retries=3,timeout=10):
             except:
                 rootLogger.error("Error in downloading article from link {}".format(link))
                 rootLogger.info("Retrying in 5 sconds this is retry number {}".format(i+1))
+
                 sleep(timeout)
                 continue    
  # if article is not downloaded then return {}
     if not article.text:
-        return {"error":"artical not found"}           
+        #write the link to a file called failed_links.txt if file aleready exits if not create a new file
+        with open("failed_links.txt","a+") as f:
+            f.write(link+"\n")         
+        return {"error":"artical not found"}  
+        
     
           
     
@@ -169,11 +176,15 @@ def get_full_data(keyword,conf_file,theme_dict,start_index=0,days=30):
         rootLogger.info("start index {}".format(start_index))
          #look for key error in search result if error in search reusult return data list with serach result
         if "error" in search_result:
+           
+                          
             if  search_result["error"]["code"] == 429:
                 rootLogger.info("Error 429")
                 for i in api_key[index:]:
                     search_result=search(keyword,cx=cx,days=days,start_index=start_index,api_key=api_key_current)
                     rootLogger.info("getting links form search result {}".format(search_result))
+                    
+
                     if "error" in search_result and search_result["error"]["code"] == 429:
                         if api_key_current !=api_key[-1]:
                             index+=1
@@ -183,7 +194,8 @@ def get_full_data(keyword,conf_file,theme_dict,start_index=0,days=30):
                         else:    
                             rootLogger.error("Error in search result {}".format(search_result))
                             data.append(search_result)
-                            return data    
+                            return data
+                             
                     else:
                         rootLogger.info("Serach is working well with the new api key {}".format(api_key_current))
                         break
@@ -192,6 +204,10 @@ def get_full_data(keyword,conf_file,theme_dict,start_index=0,days=30):
                     
         
   #incriment the start index by 10 each time till you get less than 10 links
+        if "searchInformation" not in search_result:
+            return search_result
+
+
         
         if int(search_result["searchInformation"]["totalResults"])>0:
             data.append({"status":"success","results":search_result["searchInformation"]["totalResults"],"start_index":search_result["queries"]["request"][0]["startIndex"],"search_term":keyword})
@@ -365,11 +381,11 @@ def get_full_data(keyword,conf_file,theme_dict,start_index=0,days=30):
                         place=soup.findAll("div", {"class":"athr-info"})
                         loc_name=place[0].text.split(" ")[-3][1:]
                         rootLogger.info("loc_name {}".format(loc_name))
-                        cordinates=loc.geocode(translator.translate(loc_name, dest='en').text)
+                        cordinates=loc.geocode(translator.translate(loc_name, dest='en').text+" "+all_data["state"])
                         all_data["location"]=translator.translate(loc_name, dest='en').text
                         rootLogger.info("location {}".format(all_data["location"]))
                     else:    
-                        cordinates=loc.geocode(all_data["location"])
+                        cordinates=loc.geocode(all_data["location"]+" "+all_data["state"])
                         rootLogger.info("cordinates {}".format(cordinates))
 
                 except:
@@ -585,7 +601,7 @@ def get_top_words_hi_nouns(text,df=None):
     else:    
                 
 
-        words=get_pos_from_text_hi(text,"hi")
+        words=get_pos_from_text_hi(text,f"hi")
         nouns_and_count={}
         for i in words:
             if words[i][1]=="NOUN":
@@ -690,4 +706,63 @@ def read_files(path):
             df=pandas.concat([df,pandas.read_csv(path+i)])
     return df
 
+ #write a fuction df check
+ # wehere given a dictionary of lists
+ # check check weter all the strings found in the list are in df["text"]
+ #if there is a space between the string and the text
+ #split and search each part saperatly
+ #set both the values to lowercase before checking
+ #if none of the strings are found remove the row from df
+ #return df
+def df_check(df,theme_dict):
+    all_themes=[]
+    lang_dict=dict(zip(df.text,df.language))
     
+    for t in df["text"] :
+
+        for i in theme_dict:
+            for j in theme_dict[i]:
+                themes=[]
+            
+                if lang_dict[t]=="en":
+                    
+                    if " " in j:
+                        x=j.split(" ")
+                        for k in x:
+                            if k.lower() in t.lower():
+                                themes.append(j)
+                    else:
+                        if j.lower() in t.lower():
+                            themes.append(j)
+                else:
+                    if " " in j:
+                        x=j.split(" ")
+                        for k in x:
+                            
+                            translated=transliterate(k, sanscript.ITRANS, sanscript.DEVANAGARI)
+                            if translated.lower() in t.lower():
+                                themes.append(j)
+                    else:
+                        translated=transliterate(j, sanscript.ITRANS, sanscript.DEVANAGARI)
+                        if translated.lower() in t.lower():
+                            themes.append(j)            
+        all_themes.append(themes)   
+        
+    df["final_theme"]=all_themes
+    return df                        
+
+
+                
+                
+            
+                            
+
+                    
+    #if final_themes is empty remove the row
+#    df=df[df["final_themes"].notnull()]
+    #append all_themes to the row
+    df["final_themes"]=df["final_themes"].apply(lambda x:','.join(x))
+    return df            
+
+
+

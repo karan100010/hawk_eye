@@ -691,7 +691,7 @@ def check_duplicate_links(df):
 def check_duplicate_text(df):
     df=df.groupby("text").agg({'state':"first", 'publication':"first", 'link':"first", 'location':"first", 'title':"first", 'text':"first",
          'char_count':"first", 'date_published':"first", 'date_scraped':"first", 'language':"first",  
-            'long':"first", 'lat':"first", 'quotes':"first", 'images_num':"first", 'image_links':"first", 'image_found':"first","subtheme":"first"})
+            'long':"first", 'lat':"first", 'quotes':"first", 'images_num':"first", 'image_links':"first", 'image_found':"first","subtheme":lambda x:','.join(x.values)})
 
 
     return df
@@ -769,4 +769,17 @@ def df_check(df,theme_dict):
     return df            
 
 
-
+#the df if df["publication"]=="Amar Ujala"
+#split the text by "}" and set last elemet of the list to df["text"]
+#return df
+def remove_brackets(df):
+    dfx=df[df["publication"]=="Amar Ujala"]
+    dfx["text"]=dfx["text"].str.split("}").str.get(-1)
+    dfy=df[df["publication"]!="Amar Ujala"]
+    df=pandas.concat([dfx,dfy])
+    return df
+#write a regular expression to remove the text between the brackets
+#return df
+def remove_brackets_regex(df):
+    df["text"]=df["text"].str.replace(r"\{(.*?)\}\}", "")
+    return df

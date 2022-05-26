@@ -178,7 +178,7 @@ theme_dict={
 "covid 'Case Detection'",
 "covid 'Contact Tracing'",
 "Corona 'Helpdesk'", 
-"Covid 'death'",
+'"Covid death"',
 "COVID 'facilities'",
 "Covid Medication",
 "covid 'Cremation'",

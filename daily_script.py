@@ -20,6 +20,7 @@ all_data_clean=remove_status(data)
 
 df=pandas.DataFrame(all_data_clean)
 df=filter_text(df)
+df=check_duplicate_text(df)
 df=check_duplicate_links(df)
 name="daily_data"+datetime.now().strftime("%Y-%m-%d")+".csv"
 

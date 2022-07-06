@@ -1,0 +1,1 @@
+python3 daily_script.py

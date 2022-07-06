@@ -1,9 +1,11 @@
 #write a fuction that takes google sheets as input and returns a json object
-
+import asyncio
+import ast
 from asyncio.log import logger
 from distutils.log import error
 from fnmatch import translate
 from msilib import add_data
+from unittest import result
 from matplotlib.pyplot import text, title
 from regex import D
 from sqlalchemy import create_engine
@@ -240,8 +242,10 @@ def get_full_data(keyword,conf_file,theme_dict,start_index=0,days=30):
                     all_data["location"]=all_data["link"].split("/")[4].split("-")[0]
                     rootLogger.info("location {}".format(all_data["location"]))
 #                try to get location coordinates from the location name
-                
-                
+                if all_data["location"]=="bagpat":
+                    all_data["location"]="baghpat"
+                if all_data["location"]=="muzaffar":
+                    all_data["location"]="muzaffar nagar"    
                 if all_data["link"]!="Unknown":
                     news=news_scraper(all_data["link"])
                     #if error in news return all_data with error and continue
@@ -422,8 +426,11 @@ def get_full_data(keyword,conf_file,theme_dict,start_index=0,days=30):
                     all_data["images_num"]=len(i["pagemap"]["cse_image"])
                     image_links=[]
                     for j in i["pagemap"]["cse_image"]:
+                        if "src" in j:
                         
-                        image_links.append(j["src"])
+                            image_links.append(j["src"])
+                        else:
+                            rootLogger.info("src not found")    
                     all_data["image_links"]=image_links
                     #if all_data["images_num"]>0 and all image links dont end with photo.jpg add all_data["imgage_found"]=True else add all_data["image_found"]=False
                     if all_data["images_num"]>0:
@@ -566,9 +573,9 @@ def add_word_count(df):
 
     
         
-def get_pos_from_text_hi(text,lang):
+def get_pos_from_text_hi(text,nlp):
     text=remove_punctuations(text)
-    nlp = stanza.Pipeline(lang=lang, processors='tokenize,pos')
+    #nlp = stanza.Pipeline(lang=lang, processors='tokenize,pos')
     doc = nlp(text)
     text_lis=[]
     pos=[]
@@ -588,6 +595,31 @@ def get_pos_from_text_hi(text,lang):
     #convert final_dict to a dictionary
     #       
     return dict(final_dict)
+
+
+async def get_pos_from_text_hi_as(text,lang):
+    text=remove_punctuations(text)
+    #nlp = stanza.Pipeline(lang=lang, processors='tokenize,pos')
+    doc =  nlp(text)
+    text_lis=[]
+    pos=[]
+    for sent in doc.sentences:
+        for word in sent.words:
+            text_lis.append(word.text)
+            pos.append(word.upos)
+    #count unique words in text test_lis 
+    count=Counter(text.split())
+    final_dict={}
+
+    for i,j in count.items():
+        if i in text_lis:
+            final_dict[i]=[j,pos[text_lis.index(i)]]
+    #sort dict in decending order usign count
+    final_dict=await sorted(final_dict.items(), key=lambda kv: kv[1][0], reverse=True)  
+    #convert final_dict to a dictionary
+    #       
+    return dict(final_dict)
+
 
 
 # after geting pos form text check for nouns and verbs
@@ -757,16 +789,48 @@ def df_check(df,theme_dict):
 
 
                 
-                
-            
-                            
+#read dictonary from a column in a panda dataframe
+#create new column df.nouns where you take the second value from the value pairing if the value the pairing is noun
+def get_nouns(dict):
+    
+    #if dict is a string use dict=ast.literal_eval(dict)
+    if dict is not None:
+        if isinstance(dict,str):
+            dict=ast.literal_eval(dict)
+        
+    
+    result_dict={}
+    for key,value in dict.items():
+        if value[1]=="NOUN":
+            result_dict[key]=value[0]
+    return result_dict  
 
-                    
-    #if final_themes is empty remove the row
-#    df=df[df["final_themes"].notnull()]
-    #append all_themes to the row
-    df["final_themes"]=df["final_themes"].apply(lambda x:','.join(x))
-    return df            
+def get_propernouns(dict):
+    if dict is not None:
+        if isinstance(dict,str):
+            dict=ast.literal_eval(dict)
+
+    result_dict={}
+    for key,value in dict.items():
+        if value[1]=="PROPN":
+            result_dict[key]=value[0]
+    return result_dict    
+
+# read dictonary and covert return a string that is [key]*value for each key value pair
+def get_wordcloud_string(dict):
+    
+    if dict is not None:
+        if isinstance(dict,str):
+            dict=ast.literal_eval(dict)
+
+    result_dict=""
+    for key,value in dict.items():
+        result_dict=result_dict+(key+" ")*value
+    return result_dict
+
+
+
+
 
 
 #the df if df["publication"]=="Amar Ujala"
@@ -783,3 +847,13 @@ def remove_brackets(df):
 def remove_brackets_regex(df):
     df["text"]=df["text"].str.replace(r"\{(.*?)\}\}", "")
     return df
+
+# look for the term strating with gyanva in a text colum delete the rows were the term is found
+
+#return df
+
+def remove_gyanva(df):
+    df=df[~df["text"].str.contains("gyanva")]
+    return df
+
+   
